@@ -12,7 +12,7 @@ export const GET = async (req: NextRequest) => {
     // Ambil token user
     const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
 
-    let baseFilter: any = {};
+    // let baseFilter: any = {};
 
     // // Jika user role dan ada institution_id, dapatkan member_ids yang sesuai
     // if (token && token.role === 'user' && token.institution_id) {
