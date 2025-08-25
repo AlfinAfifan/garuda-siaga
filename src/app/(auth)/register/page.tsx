@@ -11,7 +11,7 @@ export default function RegisterPage() {
         <div className="flex justify-center gap-2 md:justify-start">
           <a href="#" className="flex items-center gap-2 font-medium">
             <Image src="/icon.png" alt="Logo" width={30} height={30} />
-            Garuda Penggalang
+            Garuda Siaga
           </a>
         </div>
         <div className="flex flex-1 items-center justify-center">
@@ -22,9 +22,9 @@ export default function RegisterPage() {
 
         {/* Register Link */}
         <div className="text-center">
-          <p className="text-primary-600">
+          <p className="text-gray-500">
             Sudah punya akun?{' '}
-            <Link href="/login" className="font-medium text-primary-700 hover:text-primary-900 transition-colors">
+            <Link href="/login" className="font-medium text-blue-500 hover:text-blue-600 transition-colors">
               Login sekarang
             </Link>
           </p>

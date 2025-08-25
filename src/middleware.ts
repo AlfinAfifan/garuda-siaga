@@ -2,19 +2,37 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { getToken } from 'next-auth/jwt';
 
-const PUBLIC_PATHS = ['/_next', '/favicon.ico'];
-
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
   const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
-  console.log(token);
 
-  // Allow public paths
-  if (PUBLIC_PATHS.some((path) => pathname.startsWith(path))) {
+  if (
+    pathname.startsWith('/login') ||
+    pathname.startsWith('/access-denied') ||
+    pathname.startsWith('/_next') ||
+    pathname.startsWith('/api/auth') ||
+    pathname.startsWith('/api') ||
+    pathname === '/favicon.ico' ||
+    pathname === '/menu.json' ||
+    pathname === '/data_dashboard.json' ||
+    pathname.endsWith('.svg') ||
+    pathname.endsWith('.png') ||
+    pathname.endsWith('.jpg') ||
+    pathname.endsWith('.jpeg') ||
+    pathname.startsWith('/image/')
+  ) {
     return NextResponse.next();
   }
 
   if (pathname === '/login') {
+    if (!token) {
+      return NextResponse.next();
+    } else {
+      return NextResponse.redirect(new URL('/dashboard', req.url));
+    }
+  }
+
+  if (pathname === '/register') {
     if (!token) {
       return NextResponse.next();
     } else {
@@ -37,9 +55,6 @@ export async function middleware(req: NextRequest) {
   return NextResponse.next();
 }
 
-// Aktifkan middleware untuk semua route
 export const config = {
-  matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|api/auth).*)',
-  ],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|api|image).*)'],
 };

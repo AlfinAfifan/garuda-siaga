@@ -18,7 +18,7 @@ import { useRouter } from 'next/navigation';
 
 export function RegisterForm({ className, ...props }: React.ComponentProps<'form'>) {
   const queryClient = useQueryClient();
-  const router = useRouter()
+  const router = useRouter();
 
   const [showPassword, setShowPassword] = useState(false);
   const [paramsInstitution, setParamsInstitution] = useState({ search: '', page: 1, limit: 10 });
@@ -46,7 +46,7 @@ export function RegisterForm({ className, ...props }: React.ComponentProps<'form
   const handleRegisterUser = async (values: any) => {
     await toast.promise(registerUserMutation.mutateAsync(values), {
       loading: 'Mengirim permintaan...',
-      success: 'Register berhasil!',
+      success: 'Register berhasil! Silahkan menunggu persetujuan admin',
       error: (err) => `Gagal menyimpan request: ${err.message}`,
     });
   };
@@ -57,7 +57,7 @@ export function RegisterForm({ className, ...props }: React.ComponentProps<'form
         <Form className={cn('flex flex-col gap-6', className)} {...props}>
           <div className="flex flex-col items-center gap-2 text-center">
             <h1 className="text-2xl font-bold">Register your account</h1>
-            <p className="text-muted-foreground text-sm text-balance">Register to access all features of Garuda Penggalang</p>
+            <p className="text-muted-foreground text-sm text-balance">Register to access all features of Garuda Siaga</p>
           </div>
           <div className="grid grid-cols-2 gap-6">
             <div className="col-span-2 grid gap-3">
@@ -75,12 +75,8 @@ export function RegisterForm({ className, ...props }: React.ComponentProps<'form
                 <Label htmlFor="password">Password</Label>
               </div>
               <div className="relative">
-                <Field name="password">
-                  {({ field }: any) => (
-                    <Input {...field} id="password" type={showPassword ? 'text' : 'password'} placeholder="Masukkan password" className={`pl-2.5 pr-10 border-primary-200 focus:border-primary-500 focus:ring-primary-500`} />
-                  )}
-                </Field>
-                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-3 text-primary-500 hover:text-primary-700 transition-colors">
+                <Field name="password">{({ field }: any) => <Input {...field} id="password" type={showPassword ? 'text' : 'password'} placeholder="Masukkan password" className={`pl-2.5 pr-10 `} />}</Field>
+                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-3 text-gray-500 hover:text-gray-600 transition-colors">
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
