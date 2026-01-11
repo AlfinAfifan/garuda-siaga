@@ -56,7 +56,8 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
 
     // Parse the request body
     const body = await req.json();
-    let { name, sub_district, address, gudep_man, gudep_woman, head_gudep_man, head_gudep_woman, nta_head_gudep_man, nta_head_gudep_woman, headmaster_name, headmaster_number } = body;
+    const { name, address, gudep_man, gudep_woman, head_gudep_man, head_gudep_woman, nta_head_gudep_man, nta_head_gudep_woman, headmaster_name, headmaster_number } = body;
+    let { sub_district } = body;
 
     if (!id || !Types.ObjectId.isValid(id)) {
       return new NextResponse('Invalid institution ID', { status: 400 });

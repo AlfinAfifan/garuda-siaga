@@ -13,7 +13,7 @@ export const GET = async (req: NextRequest) => {
     await connect();
 
     // Build filter based on role
-    let filter: any = { is_delete: 0 };
+    const filter: any = { is_delete: 0 };
 
     // Filter untuk admin_kecamatan
     if (token.role === 'admin_kecamatan' && token.sub_district) {
