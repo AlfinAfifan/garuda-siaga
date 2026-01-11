@@ -39,7 +39,25 @@ export const GET = async (req: NextRequest) => {
 
     const total_data = await Member.countDocuments(filter);
 
-    const dataRaw = await Member.find(filter).skip(skip).limit(limit).populate({ path: 'institution_id', select: 'name' }).lean();
+    let dataRaw: any[];
+
+    // Untuk admin_kecamatan, perlu join dengan institution dan filter berdasarkan sub_district
+    if (token.role === 'admin_kecamatan' && token.sub_district) {
+      dataRaw = await Member.find(filter)
+        .skip(skip)
+        .limit(limit)
+        .populate({
+          path: 'institution_id',
+          select: 'name sub_district',
+          match: { sub_district: token.sub_district, is_delete: 0 },
+        })
+        .lean();
+
+      // Filter out members yang institution_id null (tidak match dengan sub_district)
+      dataRaw = dataRaw.filter((item: any) => item.institution_id !== null);
+    } else {
+      dataRaw = await Member.find(filter).skip(skip).limit(limit).populate({ path: 'institution_id', select: 'name' }).lean();
+    }
 
     // Map institution_id to string and add institution_name
     const data = dataRaw.map((item: any) => {

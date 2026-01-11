@@ -21,6 +21,8 @@ export default function InstitutionPage() {
   const queryClient = useQueryClient();
   const { setButtonAction } = useNavbarAction();
 
+  const { data: session } = useSession();
+
   const [modalOpen, setModalOpen] = useState(false);
   const [deleteModal, setDeleteModal] = useState(false);
   const [params, setParams] = useState({ search: '', page: 1, limit: 10 });
@@ -30,7 +32,7 @@ export default function InstitutionPage() {
 
   const [initialValues, setInitialValues] = useState<InstitutionPayload>({
     name: '',
-    sub_district: '',
+    sub_district: session?.user?.role === 'admin_kecamatan' ? session.user.sub_district || '' : '',
     address: '',
     gudep_man: '',
     gudep_woman: '',
@@ -89,7 +91,7 @@ export default function InstitutionPage() {
 
     setInitialValues({
       name: '',
-      sub_district: '',
+      sub_district: session?.user?.role === 'admin_kecamatan' ? session.user.sub_district || '' : '',
       address: '',
       gudep_man: '',
       gudep_woman: '',
@@ -196,7 +198,7 @@ export default function InstitutionPage() {
           Tambah Lembaga
         </Button>
 
-        <Button variant="outline" className='border-primary-500 text-primary-500 hover:text-primary-500' onClick={handleExport}>
+        <Button variant="outline" className="border-primary-500 text-primary-500 hover:text-primary-500" onClick={handleExport}>
           <FolderDown className="w-4 h-4 mr-2" />
           Excel
         </Button>
@@ -277,7 +279,7 @@ export default function InstitutionPage() {
           setEditingData(null);
           setInitialValues({
             name: '',
-            sub_district: '',
+            sub_district: session?.user?.role === 'admin_kecamatan' ? session.user.sub_district || '' : '',
             address: '',
             gudep_man: '',
             gudep_woman: '',

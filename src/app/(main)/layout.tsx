@@ -41,43 +41,43 @@ const sidebarItems: SidebarItem[] = [
     name: 'Dashboard',
     href: '/dashboard',
     icon: LayoutGrid,
-    roles: ['user', 'admin', 'super_admin'],
+    roles: ['user', 'admin', 'super_admin', 'admin_kecamatan'],
   },
   {
     name: 'Lembaga',
     href: '/institution',
     icon: Building,
-    roles: ['admin', 'super_admin'],
+    roles: ['admin', 'super_admin', 'admin_kecamatan'],
   },
   {
     name: 'Anggota',
     href: '/member',
     icon: UserCheck,
-    roles: ['user', 'admin', 'super_admin'],
+    roles: ['user', 'admin', 'super_admin', 'admin_kecamatan'],
   },
   {
     name: 'TKU',
     href: '/tku',
     icon: Trophy,
-    roles: ['user', 'admin', 'super_admin'],
+    roles: ['user', 'admin', 'super_admin', 'admin_kecamatan'],
   },
   {
     name: 'TKK',
     href: '/tkk',
     icon: Award,
-    roles: ['user', 'admin', 'super_admin'],
+    roles: ['user', 'admin', 'super_admin', 'admin_kecamatan'],
   },
   {
     name: 'Garuda',
     href: '/garuda',
     icon: Award,
-    roles: ['user', 'admin', 'super_admin'],
+    roles: ['user', 'admin', 'super_admin', 'admin_kecamatan'],
   },
   {
     name: 'Jenis TKK',
     href: '/type-tkk',
     icon: FileText,
-    roles: ['admin', 'super_admin'],
+    roles: ['admin', 'super_admin', 'admin_kecamatan'],
   },
   {
     name: 'User',
@@ -256,7 +256,7 @@ function Navbar({ buttonAction, onMenuClick }: NavbarProps) {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button className="relative uppercase font-semibold bg-white hover:bg-gray-50 text-primary-600 shadow">
-              {session?.user?.institution_name || session?.user?.name}
+              {session?.user?.role === 'admin' ? session?.user?.institution_name : session?.user?.name}
               <ChevronDown className="w-4 h-4 ml-2" />
             </Button>
           </DropdownMenuTrigger>

@@ -41,7 +41,7 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
 
     // Parse the request body
     const body = await req.json();
-    const { name, email, password, role, institution_id } = body;
+    const { name, email, password, role, institution_id, sub_district } = body;
     if (!id || !Types.ObjectId.isValid(id)) {
       return new NextResponse('Invalid user ID', { status: 400 });
     }
@@ -51,7 +51,7 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
     const hashedPassword = await hash(password, 10);
 
     // Find the user by ID and update
-    const updatedUser = await User.findByIdAndUpdate(id, { name, email, password: hashedPassword, role, institution_id }, { new: true, runValidators: true }).select('-password');
+    const updatedUser = await User.findByIdAndUpdate(id, { name, email, password: hashedPassword, role, institution_id, sub_district }, { new: true, runValidators: true }).select('-password');
 
     if (!updatedUser) {
       return new NextResponse('User not found', { status: 404 });

@@ -21,10 +21,15 @@ import { getMembers } from '@/services/member';
 import { SearchableSelect } from '@/components/ui/searchable-select';
 import { useNavbarAction } from '../layout';
 import { utils, writeFile } from 'xlsx';
+import { useSession } from 'next-auth/react';
 
 export default function TKKPage() {
   const queryClient = useQueryClient();
   const { setButtonAction } = useNavbarAction();
+
+  const { data: session } = useSession();
+
+  const canWrite = session?.user?.role === 'super_admin' || session?.user?.role === 'admin' || session?.user?.role === 'user';
 
   const [modalOpen, setModalOpen] = useState(false);
   const [deleteModal, setDeleteModal] = useState(false);
@@ -248,10 +253,12 @@ export default function TKKPage() {
   useEffect(() => {
     setButtonAction(
       <div className="flex items-center gap-2">
-        <Button className="bg-primary-600 hover:bg-primary-700" onClick={() => setShowAddModal(true)}>
-          <Plus className="w-4 h-4 mr-2" />
-          Tambah Mula
-        </Button>
+        {canWrite && (
+          <Button className="bg-primary-500 hover:bg-primary-600" onClick={() => setShowAddModal(true)}>
+            <Plus className="w-4 h-4 mr-2" />
+            Tambah Mula
+          </Button>
+        )}
 
         <Button className="bg-green-600 hover:bg-green-700" onClick={handleExport}>
           <FolderDown className="w-4 h-4 mr-2" />
@@ -291,16 +298,17 @@ export default function TKKPage() {
     {
       header: 'Actions',
       accessor: 'id',
-      cell: (item) => (
-        <div className="flex gap-4 items-center">
-          <Button disabled={item.bantu} onClick={() => handleUpdate(item)} size="icon" className="size-8 bg-blue-50 hover:bg-blue-100 text-blue-600">
-            <CircleCheckBig className="h-4 w-4" />
-          </Button>
-          <Button disabled={item.bantu} onClick={() => handleDelete(item)} size="icon" className="size-8 bg-red-50 hover:bg-red-100 text-red-600">
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        </div>
-      ),
+      cell: (item) =>
+        canWrite && (
+          <div className="flex gap-4 items-center">
+            <Button disabled={item.bantu} onClick={() => handleUpdate(item)} size="icon" className="size-8 bg-blue-50 hover:bg-blue-100 text-blue-600">
+              <CircleCheckBig className="h-4 w-4" />
+            </Button>
+            <Button disabled={item.bantu} onClick={() => handleDelete(item)} size="icon" className="size-8 bg-red-50 hover:bg-red-100 text-red-600">
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
+        ),
     },
   ];
 
@@ -332,16 +340,17 @@ export default function TKKPage() {
     {
       header: 'Actions',
       accessor: 'id',
-      cell: (item) => (
-        <div className="flex gap-4 items-center">
-          <Button disabled={item.tata} onClick={() => handleUpdate(item)} size="icon" className="size-8 bg-blue-50 hover:bg-blue-100 text-blue-600">
-            <CircleCheckBig className="h-4 w-4" />
-          </Button>
-          <Button disabled={item.tata} onClick={() => handleDelete(item)} size="icon" className="size-8 bg-red-50 hover:bg-red-100 text-red-600">
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        </div>
-      ),
+      cell: (item) =>
+        canWrite && (
+          <div className="flex gap-4 items-center">
+            <Button disabled={item.tata} onClick={() => handleUpdate(item)} size="icon" className="size-8 bg-blue-50 hover:bg-blue-100 text-blue-600">
+              <CircleCheckBig className="h-4 w-4" />
+            </Button>
+            <Button disabled={item.tata} onClick={() => handleDelete(item)} size="icon" className="size-8 bg-red-50 hover:bg-red-100 text-red-600">
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
+        ),
     },
   ];
 
@@ -373,13 +382,14 @@ export default function TKKPage() {
     {
       header: 'Actions',
       accessor: 'id',
-      cell: (item) => (
-        <div className="flex gap-4 items-center">
-          <Button onClick={() => handleDelete(item)} size="icon" className="size-8 bg-red-50 hover:bg-red-100 text-red-600">
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        </div>
-      ),
+      cell: (item) =>
+        canWrite && (
+          <div className="flex gap-4 items-center">
+            <Button onClick={() => handleDelete(item)} size="icon" className="size-8 bg-red-50 hover:bg-red-100 text-red-600">
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
+        ),
     },
   ];
   return (
@@ -456,7 +466,7 @@ export default function TKKPage() {
                   description: 'Tambahkan data TKU Mula anggota',
                   buttonText: 'Tambah TKU Mula',
                   icon: Plus,
-                  onButtonClick: () => setShowAddModal(true),
+                  onButtonClick: session?.user?.role !== 'admin_kecamatan' ? () => setShowAddModal(true) : undefined,
                 }}
               />
               <CustomPagination

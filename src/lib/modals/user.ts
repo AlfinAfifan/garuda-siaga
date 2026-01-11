@@ -17,8 +17,12 @@ const userSchema = new Schema(
     },
     role: {
       type: String,
-      enum: ['user', 'admin', 'super_admin'],
+      enum: ['user', 'admin', 'super_admin', 'admin_kecamatan'],
       default: 'user',
+    },
+    sub_district: {
+      type: String,
+      default: '',
     },
     institution_id: {
       type: Schema.Types.ObjectId,
@@ -41,7 +45,7 @@ const userSchema = new Schema(
     is_delete: {
       type: Number, // 0: not deleted, 1: deleted
       default: 0,
-    }
+    },
   },
   {
     timestamps: true,

@@ -1,7 +1,7 @@
-import connect from "@/lib/db";
-import User from "@/lib/modals/user";
-import { hash } from "bcryptjs";
-import { NextResponse } from "next/server";
+import connect from '@/lib/db';
+import User from '@/lib/modals/user';
+import { hash } from 'bcryptjs';
+import { NextResponse } from 'next/server';
 
 export const POST = async (req: Request) => {
   try {
@@ -10,7 +10,7 @@ export const POST = async (req: Request) => {
 
     // Parse the request body
     const body = await req.json();
-    const { name, email, password, institution_id } = body;
+    const { name, email, password, institution_id, sub_district } = body;
 
     const existingEmail = await User.findOne({ email, is_delete: 0 });
 
@@ -29,7 +29,7 @@ export const POST = async (req: Request) => {
     const hashedPassword = await hash(password, 10);
 
     // Create a new user
-    const newUser = new User({ name, email, password: hashedPassword, institution_id, status: 0 });
+    const newUser = new User({ name, email, password: hashedPassword, institution_id, sub_district, status: 0 });
     await newUser.save();
 
     // Return the created user without password

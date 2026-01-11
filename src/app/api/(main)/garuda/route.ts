@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import connect from '@/lib/db';
 import Garuda from '@/lib/modals/garuda';
 import Member from '@/lib/modals/member';
+import Institution from '@/lib/modals/institution';
 import ActivityLog from '@/lib/modals/logs';
 import { getToken } from 'next-auth/jwt';
 import Tkk from '@/lib/modals/tkk';
@@ -40,6 +41,26 @@ export async function GET(req: NextRequest) {
           {
             $match: {
               'member.institution_id': new Types.ObjectId(token.institution_id),
+            },
+          },
+        ]
+      : []),
+
+    ...(token && token.role === 'admin_kecamatan' && token.sub_district
+      ? [
+          {
+            $lookup: {
+              from: 'institutions',
+              localField: 'member.institution_id',
+              foreignField: '_id',
+              as: 'institution',
+            },
+          },
+          { $unwind: '$institution' },
+          {
+            $match: {
+              'institution.sub_district': token.sub_district,
+              'institution.is_delete': 0,
             },
           },
         ]

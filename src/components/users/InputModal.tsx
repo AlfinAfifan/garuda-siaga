@@ -28,9 +28,27 @@ interface InputModalProps {
   isLoading?: boolean;
 }
 
+const list_sub_districts = [
+  { _id: 'bendungan', name: 'Bendungan' },
+  { _id: 'dongko', name: 'Dongko' },
+  { _id: 'durenan', name: 'Durenan' },
+  { _id: 'gandusari', name: 'Gandusari' },
+  { _id: 'kampak', name: 'Kampak' },
+  { _id: 'karangan', name: 'Karangan' },
+  { _id: 'munjungan', name: 'Munjungan' },
+  { _id: 'panggul', name: 'Panggul' },
+  { _id: 'pogalan', name: 'Pogalan' },
+  { _id: 'pule', name: 'Pule' },
+  { _id: 'suruh', name: 'Suruh' },
+  { _id: 'trenggalek', name: 'Trenggalek' },
+  { _id: 'tugu', name: 'Tugu' },
+  { _id: 'watulimo', name: 'Watulimo' },
+];
+
 export function InputModal({ open, onClose, onSubmit, initialValues, isLoading }: InputModalProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [paramsInstitution, setParamsInstitution] = useState({ search: '', page: 1, limit: 10 });
+  const [paramsSubDistrict, setParamsSubDistrict] = useState({ search: '', page: 1, limit: 10 });
 
   const { data: dataInstitution, isPending: isPendingInstitution } = useQuery({
     queryKey: ['institutions', paramsInstitution],
@@ -83,13 +101,29 @@ export function InputModal({ open, onClose, onSubmit, initialValues, isLoading }
                       <SelectValue placeholder="Pilih role" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="super_admin">Super Admin</SelectItem>
+                      <SelectItem value="admin_kecamatan">Admin Kecamatan</SelectItem>
                       <SelectItem value="admin">Admin</SelectItem>
                       <SelectItem value="user">User</SelectItem>
                     </SelectContent>
                   </Select>
                   <ErrorMessage name="role" component="div" className="text-red-500 text-xs mt-1" />
                 </div>
+
+                {values.role === 'admin_kecamatan' && (
+                  <div className=" space-y-2">
+                    <Label htmlFor="sub_district">Kecamatan</Label>
+                    <SearchableSelect
+                      value={values.sub_district ?? ''}
+                      options={list_sub_districts}
+                      placeholder="Pilih kecamatan"
+                      searchValue={paramsSubDistrict.search}
+                      onValueChange={(value) => setFieldValue('sub_district', value)}
+                      onSearchChange={(value) => setParamsSubDistrict((prev) => ({ ...prev, search: value }))}
+                      className="w-full"
+                    />
+                    <ErrorMessage name="sub_district" component="div" className="text-red-500 text-xs mt-1" />
+                  </div>
+                )}
               </div>
 
               <DialogFooter className="mt-8">

@@ -7,6 +7,8 @@ import { getToken } from 'next-auth/jwt';
 
 export const GET = async (request: NextRequest) => {
   try {
+    const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
+
     const { searchParams } = new URL(request.url);
     const search = searchParams.get('search') || '';
     const page = parseInt(searchParams.get('page') || '1', 10);
@@ -19,16 +21,21 @@ export const GET = async (request: NextRequest) => {
 
     await connect();
 
-    const total_data = await Institution.countDocuments({ is_delete: 0 });
-
-    const data = await Institution.find({
+    // Build filter based on role
+    let baseFilter: any = {
       $and: [{ is_delete: 0 }, { $or: [{ name: { $regex: search, $options: 'i' } }, { address: { $regex: search, $options: 'i' } }] }],
-    })
-      .skip(skip)
-      .limit(limit)
-      .lean();
+    };
 
-      console.log("=======>", data);
+    // Filter untuk admin_kecamatan: hanya tampilkan lembaga dengan sub_district yang sama
+    if (token && token.role === 'admin_kecamatan' && token.sub_district) {
+      baseFilter = {
+        $and: [{ is_delete: 0 }, { sub_district: token.sub_district }, { $or: [{ name: { $regex: search, $options: 'i' } }, { address: { $regex: search, $options: 'i' } }] }],
+      };
+    }
+
+    const total_data = await Institution.countDocuments(baseFilter);
+
+    const data = await Institution.find(baseFilter).skip(skip).limit(limit).lean();
 
     return new NextResponse(
       JSON.stringify({
@@ -57,6 +64,12 @@ export const POST = async (req: NextRequest) => {
     if (!token) {
       return new NextResponse('Unauthorized', { status: 401 });
     }
+
+    // Check permission: hanya super_admin, admin, dan admin_kecamatan yang boleh create
+    if (!(token.role === 'super_admin' || token.role === 'admin' || token.role === 'admin_kecamatan')) {
+      return new NextResponse('Forbidden', { status: 403 });
+    }
+
     const user_id = token.id;
 
     // Connect to the database
@@ -64,7 +77,12 @@ export const POST = async (req: NextRequest) => {
 
     // Parse the request body
     const body = await req.json();
-    const { name, sub_district, address, gudep_man, gudep_woman, head_gudep_man, head_gudep_woman, nta_head_gudep_man, nta_head_gudep_woman, headmaster_name, headmaster_number } = body;
+    let { name, sub_district, address, gudep_man, gudep_woman, head_gudep_man, head_gudep_woman, nta_head_gudep_man, nta_head_gudep_woman, headmaster_name, headmaster_number } = body;
+
+    // Jika admin_kecamatan, force sub_district sesuai dengan sub_district user
+    if (token.role === 'admin_kecamatan') {
+      sub_district = token.sub_district || sub_district;
+    }
 
     const existingInstitution = await Institution.findOne({ name });
     if (existingInstitution) {

@@ -18,10 +18,11 @@ import { UpdateConfirmation } from '@/components/ui/update-confirmation';
 import { useSession } from 'next-auth/react';
 
 export default function GarudaPage() {
-  const {data: session} = useSession()
+  const { data: session } = useSession();
   const queryClient = useQueryClient();
   const { setButtonAction } = useNavbarAction();
   const isSuperAdmin = session?.user?.role === 'super_admin';
+  const isAdminKecamatan = session?.user?.role === 'admin_kecamatan';
 
   const [modalOpen, setModalOpen] = useState(false);
   const [deleteModal, setDeleteModal] = useState(false);
@@ -119,14 +120,17 @@ export default function GarudaPage() {
   };
 
   useEffect(() => {
-    setButtonAction(
-      <Button className="bg-primary-600 hover:bg-primary-700" onClick={() => setModalOpen(true)}>
-        <Plus className="w-4 h-4 mr-2" />
-        Tambah Garuda
-      </Button>
-    );
+    // admin_kecamatan hanya bisa view, tidak bisa tambah garuda
+    if (!isAdminKecamatan) {
+      setButtonAction(
+        <Button className="bg-primary-600 hover:bg-primary-700" onClick={() => setModalOpen(true)}>
+          <Plus className="w-4 h-4 mr-2" />
+          Tambah Garuda
+        </Button>
+      );
+    }
     return () => setButtonAction(undefined);
-  }, [setButtonAction]);
+  }, [setButtonAction, isAdminKecamatan]);
 
   const columns: ColumnDef<GarudaData>[] = [
     { header: 'Anggota', accessor: 'member_id.name' },
@@ -139,15 +143,20 @@ export default function GarudaPage() {
       accessor: 'id',
       cell: (item) => (
         <div className="flex items-center space-x-2">
-          {isSuperAdmin && (
-            <Button disabled={item.status !== 0} onClick={() => handleUpdateStatus(item)} size="icon" className="size-8 bg-blue-50 hover:bg-blue-100 text-blue-600">
-              <CircleCheckBig className="h-4 w-4" />
-            </Button>
-          )}
+          {/* admin_kecamatan tidak bisa approve atau delete */}
+          {!isAdminKecamatan && (
+            <>
+              {isSuperAdmin && (
+                <Button disabled={item.status !== 0} onClick={() => handleUpdateStatus(item)} size="icon" className="size-8 bg-blue-50 hover:bg-blue-100 text-blue-600">
+                  <CircleCheckBig className="h-4 w-4" />
+                </Button>
+              )}
 
-          <Button disabled={item.status !== 0} onClick={() => handleDelete(item)} size="icon" className="size-8 bg-red-50 hover:bg-red-100 text-red-600">
-            <Trash2 className="h-4 w-4" />
-          </Button>
+              <Button disabled={item.status !== 0} onClick={() => handleDelete(item)} size="icon" className="size-8 bg-red-50 hover:bg-red-100 text-red-600">
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </>
+          )}
         </div>
       ),
     },
@@ -217,7 +226,7 @@ export default function GarudaPage() {
               description: 'Tambahkan data garuda untuk mengakses sistem',
               buttonText: 'Tambah Garuda',
               icon: Plus,
-              onButtonClick: () => setModalOpen(true),
+              onButtonClick: session?.user?.role !== 'admin_kecamatan' ? () => setModalOpen(true) : undefined,
             }}
           />
           <CustomPagination

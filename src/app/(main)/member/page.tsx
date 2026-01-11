@@ -25,6 +25,7 @@ export default function MemberPage() {
   const { data: session } = useSession();
   const { setButtonAction } = useNavbarAction();
   const isSuperAdmin = session?.user?.role === 'super_admin';
+  const isAdminKecamatan = session?.user?.role === 'admin_kecamatan';
 
   const [params, setParams] = useState({
     search: '',
@@ -302,10 +303,13 @@ export default function MemberPage() {
   useEffect(() => {
     setButtonAction(
       <div className="flex items-center gap-2">
-        <Button className="bg-primary-600 hover:bg-primary-700" onClick={() => setModalOpen(true)}>
-          <Plus className="w-4 h-4 mr-2" />
-          Tambah Anggota
-        </Button>
+        {/* admin_kecamatan hanya bisa view, tidak bisa tambah member */}
+        {!isAdminKecamatan && (
+          <Button className="bg-primary-600 hover:bg-primary-700" onClick={() => setModalOpen(true)}>
+            <Plus className="w-4 h-4 mr-2" />
+            Tambah Anggota
+          </Button>
+        )}
 
         <Button className="bg-green-600 hover:bg-green-700" onClick={handleExport}>
           <FolderDown className="w-4 h-4 mr-2" />
@@ -314,7 +318,7 @@ export default function MemberPage() {
       </div>
     );
     return () => setButtonAction(undefined);
-  }, [setButtonAction]);
+  }, [setButtonAction, isAdminKecamatan]);
 
   const columns: ColumnDef<MemberData>[] = [
     {
@@ -358,21 +362,27 @@ export default function MemberPage() {
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Actions</DropdownMenuLabel>
-            <DropdownMenuItem onClick={() => handleEdit(item)}>
-              <Pencil className="mr-2 h-4 w-4" />
-              <span>Edit</span>
-            </DropdownMenuItem>
+            {/* admin_kecamatan hanya bisa view (read-only) */}
+            {!isAdminKecamatan && (
+              <DropdownMenuItem onClick={() => handleEdit(item)}>
+                <Pencil className="mr-2 h-4 w-4" />
+                <span>Edit</span>
+              </DropdownMenuItem>
+            )}
             <DropdownMenuItem onClick={() => handleDetail(item)}>
               <Eye className="mr-2 h-4 w-4" />
               <span>Detail</span>
             </DropdownMenuItem>
 
-            <DropdownMenuSeparator />
-
-            <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => handleDelete(item)}>
-              <Trash2 className="mr-2 size-4 text-red-600" />
-              <span>Hapus</span>
-            </DropdownMenuItem>
+            {!isAdminKecamatan && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => handleDelete(item)}>
+                  <Trash2 className="mr-2 size-4 text-red-600" />
+                  <span>Hapus</span>
+                </DropdownMenuItem>
+              </>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       ),

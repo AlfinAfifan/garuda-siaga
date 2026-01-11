@@ -46,12 +46,17 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
       return new NextResponse('Unauthorized', { status: 401 });
     }
 
+    // Check permission
+    if (!(token.role === 'super_admin' || token.role === 'admin' || token.role === 'admin_kecamatan')) {
+      return new NextResponse('Forbidden', { status: 403 });
+    }
+
     const user_id = token.id;
     const { id } = await params;
 
     // Parse the request body
     const body = await req.json();
-    const { name, sub_district, address, gudep_man, gudep_woman, head_gudep_man, head_gudep_woman, nta_head_gudep_man, nta_head_gudep_woman, headmaster_name, headmaster_number } = body;
+    let { name, sub_district, address, gudep_man, gudep_woman, head_gudep_man, head_gudep_woman, nta_head_gudep_man, nta_head_gudep_woman, headmaster_name, headmaster_number } = body;
 
     if (!id || !Types.ObjectId.isValid(id)) {
       return new NextResponse('Invalid institution ID', { status: 400 });
@@ -59,6 +64,22 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
 
     // Connect to the database
     await connect();
+
+    // Untuk admin_kecamatan, validasi bahwa institution yang akan diupdate ada di sub_district mereka
+    if (token.role === 'admin_kecamatan') {
+      const existingInstitution = await Institution.findOne({ _id: id, is_delete: 0 });
+      if (!existingInstitution) {
+        return new NextResponse('Institution not found', { status: 404 });
+      }
+
+      // Cek apakah institution di sub_district yang sama
+      if (existingInstitution.sub_district !== token.sub_district) {
+        return new NextResponse('Forbidden: You can only update institutions in your sub_district', { status: 403 });
+      }
+
+      // Force sub_district sesuai dengan sub_district user
+      sub_district = token.sub_district || sub_district;
+    }
 
     // Find the institution by ID and update
     const updatedInstitution = await Institution.findByIdAndUpdate(
@@ -96,6 +117,11 @@ export const DELETE = async (req: NextRequest, { params }: { params: Promise<{ i
       return new NextResponse('Unauthorized', { status: 401 });
     }
 
+    // Check permission
+    if (!(token.role === 'super_admin' || token.role === 'admin' || token.role === 'admin_kecamatan')) {
+      return new NextResponse('Forbidden', { status: 403 });
+    }
+
     const user_id = token.id;
     const { id } = await params;
 
@@ -105,6 +131,19 @@ export const DELETE = async (req: NextRequest, { params }: { params: Promise<{ i
 
     // Connect to the database
     await connect();
+
+    // Untuk admin_kecamatan, validasi bahwa institution yang akan dihapus ada di sub_district mereka
+    if (token.role === 'admin_kecamatan') {
+      const existingInstitution = await Institution.findOne({ _id: id, is_delete: 0 });
+      if (!existingInstitution) {
+        return new NextResponse('Institution not found', { status: 404 });
+      }
+
+      // Cek apakah institution di sub_district yang sama
+      if (existingInstitution.sub_district !== token.sub_district) {
+        return new NextResponse('Forbidden: You can only delete institutions in your sub_district', { status: 403 });
+      }
+    }
 
     // Find the institution by ID and soft delete (set is_delete = 1)
     const deletedInstitution = await Institution.findByIdAndUpdate(id, { is_delete: 1 }, { new: true });

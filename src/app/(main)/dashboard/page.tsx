@@ -147,7 +147,7 @@ export default function DashboardPage() {
       icon: Users,
       color: 'bg-blue-500',
     },
-    ...(session?.user?.role === 'admin' || session?.user?.role === 'super_admin'
+    ...(session?.user?.role === 'admin' || session?.user?.role === 'super_admin' || session?.user?.role === 'admin_kecamatan'
       ? [
           {
             title: 'Lembaga',
@@ -177,7 +177,7 @@ export default function DashboardPage() {
   return (
     <div className="space-y-6">
       {/* Stats Cards */}
-      <div className={`grid grid-cols-1 md:grid-cols-2 gap-6 ${session?.user?.role === 'admin' || session?.user?.role === 'super_admin' ? 'lg:grid-cols-4' : 'lg:grid-cols-3'}`}>
+      <div className={`grid grid-cols-1 md:grid-cols-2 gap-6 ${session?.user?.role === 'admin' || session?.user?.role === 'super_admin' || session?.user?.role === 'admin_kecamatan' ? 'lg:grid-cols-4' : 'lg:grid-cols-3'}`}>
         {stats.map((stat) => (
           <Card key={stat.title} className="border-l-4 border-l-primary-600">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">

@@ -1,5 +1,6 @@
 import connect from '@/lib/db';
 import Member from '@/lib/modals/member';
+import Institution from '@/lib/modals/institution';
 import Tku from '@/lib/modals/tku';
 import { Types } from 'mongoose';
 import { getToken } from 'next-auth/jwt';
@@ -18,6 +19,28 @@ export const GET = async (req: NextRequest) => {
     if (token && token.role === 'user' && token.institution_id) {
       const members = await Member.find({ institution_id: new Types.ObjectId(token.institution_id), is_delete: 0 }, { _id: 1 });
       memberIds = members.map((member) => member._id);
+
+      // Jika tidak ada member yang ditemukan, return data kosong
+      if (memberIds.length === 0) {
+        return NextResponse.json({
+          total_mula: 0,
+          total_bantu: 0,
+          total_tata: 0,
+          total_peserta: 0,
+          selesai: 0,
+          dalam_proses: 0,
+          belum_mulai: 0,
+        });
+      }
+    } else if (token && token.role === 'admin_kecamatan' && token.sub_district) {
+      // Untuk admin_kecamatan, dapatkan institution berdasarkan sub_district
+      const institutions = await Institution.find({ sub_district: token.sub_district, is_delete: 0 }, { _id: 1 });
+      const institutionIds = institutions.map((inst) => inst._id);
+
+      if (institutionIds.length > 0) {
+        const members = await Member.find({ institution_id: { $in: institutionIds }, is_delete: 0 }, { _id: 1 });
+        memberIds = members.map((member) => member._id);
+      }
 
       // Jika tidak ada member yang ditemukan, return data kosong
       if (memberIds.length === 0) {

@@ -53,6 +53,26 @@ export const GET = async (req: NextRequest) => {
           ]
         : []),
 
+      ...(token && token.role === 'admin_kecamatan' && token.sub_district
+        ? [
+            {
+              $lookup: {
+                from: 'institutions',
+                localField: 'member.institution_id',
+                foreignField: '_id',
+                as: 'memberInstitution',
+              },
+            },
+            { $unwind: '$memberInstitution' },
+            {
+              $match: {
+                'memberInstitution.sub_district': token.sub_district,
+                'memberInstitution.is_delete': 0,
+              },
+            },
+          ]
+        : []),
+
       ...(search
         ? [
             {

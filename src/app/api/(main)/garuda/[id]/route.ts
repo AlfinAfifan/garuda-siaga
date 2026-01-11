@@ -37,9 +37,9 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
     if (!token) {
       return new NextResponse('Unauthorized', { status: 401 });
     }
-    // Validasi hanya admin & super_admin yang boleh mengubah status
+    // Validasi hanya super_admin yang boleh mengubah status (admin_kecamatan hanya read)
     if (token.role !== 'super_admin') {
-      return new NextResponse(JSON.stringify({ message: 'Hanya admin yang dapat mengubah status Garuda.' }), { status: 403, headers: { 'Content-Type': 'application/json' } });
+      return new NextResponse(JSON.stringify({ message: 'Hanya super admin yang dapat mengubah status Garuda.' }), { status: 403, headers: { 'Content-Type': 'application/json' } });
     }
 
     const user_id = token.id;

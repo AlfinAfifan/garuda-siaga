@@ -33,7 +33,7 @@ export const GET = async (req: NextRequest) => {
     ];
 
     // If not admin or super_admin, filter by user's institution
-    if (token.role !== 'admin' && token.role !== 'super_admin') {
+    if (token.role !== 'admin' && token.role !== 'super_admin' && token.role !== 'admin_kecamatan') {
       pipeline.push({
         $match: {
           'member.institution_id': new Types.ObjectId(token.institution_id),
