@@ -21,8 +21,8 @@ export default function GarudaPage() {
   const { data: session } = useSession();
   const queryClient = useQueryClient();
   const { setButtonAction } = useNavbarAction();
-  const isSuperAdmin = session?.user?.role === 'super_admin';
   const isAdminKecamatan = session?.user?.role === 'admin_kecamatan';
+  const isUser = session?.user?.role === 'user';
 
   const [modalOpen, setModalOpen] = useState(false);
   const [deleteModal, setDeleteModal] = useState(false);
@@ -126,7 +126,7 @@ export default function GarudaPage() {
         <Button className="bg-primary-600 hover:bg-primary-700" onClick={() => setModalOpen(true)}>
           <Plus className="w-4 h-4 mr-2" />
           Tambah Garuda
-        </Button>
+        </Button>,
       );
     }
     return () => setButtonAction(undefined);
@@ -144,19 +144,19 @@ export default function GarudaPage() {
       cell: (item) => (
         <div className="flex items-center space-x-2">
           {/* admin_kecamatan tidak bisa approve atau delete */}
-          {!isAdminKecamatan && (
-            <>
-              {isSuperAdmin && (
-                <Button disabled={item.status !== 0} onClick={() => handleUpdateStatus(item)} size="icon" className="size-8 bg-blue-50 hover:bg-blue-100 text-blue-600">
-                  <CircleCheckBig className="h-4 w-4" />
-                </Button>
-              )}
+          <>
+            {!isUser && (
+              <Button disabled={item.status !== 0} onClick={() => handleUpdateStatus(item)} size="icon" className="size-8 bg-blue-50 hover:bg-blue-100 text-blue-600">
+                <CircleCheckBig className="h-4 w-4" />
+              </Button>
+            )}
 
+            {!isAdminKecamatan && (
               <Button disabled={item.status !== 0} onClick={() => handleDelete(item)} size="icon" className="size-8 bg-red-50 hover:bg-red-100 text-red-600">
                 <Trash2 className="h-4 w-4" />
               </Button>
-            </>
-          )}
+            )}
+          </>
         </div>
       ),
     },
@@ -173,7 +173,7 @@ export default function GarudaPage() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-gray-900">{isPendingSummary ? '-' : summary?.total_garuda ?? 0}</div>
+            <div className="text-2xl font-bold text-gray-900">{isPendingSummary ? '-' : (summary?.total_garuda ?? 0)}</div>
           </CardContent>
         </Card>
         <Card className="border-l-4 border-l-primary-600">
@@ -184,7 +184,7 @@ export default function GarudaPage() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-gray-900">{isPendingSummary ? '-' : summary?.total_approved ?? 0}</div>
+            <div className="text-2xl font-bold text-gray-900">{isPendingSummary ? '-' : (summary?.total_approved ?? 0)}</div>
           </CardContent>
         </Card>
         <Card className="border-l-4 border-l-primary-600">
@@ -195,7 +195,7 @@ export default function GarudaPage() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-gray-900">{isPendingSummary ? '-' : summary?.total_pending ?? 0}</div>
+            <div className="text-2xl font-bold text-gray-900">{isPendingSummary ? '-' : (summary?.total_pending ?? 0)}</div>
           </CardContent>
         </Card>
       </div>

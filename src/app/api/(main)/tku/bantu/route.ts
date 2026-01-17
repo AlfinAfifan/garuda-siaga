@@ -168,15 +168,15 @@ export const POST = async (req: Request) => {
       return new NextResponse('Member already has Bantu data', { status: 400 });
     }
 
-    // Validasi jarak minimal 100 hari antara date_mula dan tanggal input bantu menggunakan moment.js
+    // Validasi jarak minimal 50 hari antara date_mula dan tanggal input bantu menggunakan moment.js
     const now = moment();
     const dateMula = existingData.date_mula ? moment(existingData.date_mula) : null;
     if (!dateMula) {
       return new NextResponse('Tanggal Mula tidak ditemukan', { status: 400 });
     }
     const diffDays = now.diff(dateMula, 'days');
-    if (diffDays < 100) {
-      return new NextResponse('Jarak antara tanggal Mula dan Bantu minimal 100 hari', { status: 400 });
+    if (diffDays < 50) {
+      return new NextResponse('Jarak antara tanggal Mula dan Bantu minimal 50 hari', { status: 400 });
     }
 
     // Ambil nomor urut SK

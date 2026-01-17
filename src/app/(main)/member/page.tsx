@@ -24,7 +24,6 @@ export default function MemberPage() {
   const queryClient = useQueryClient();
   const { data: session } = useSession();
   const { setButtonAction } = useNavbarAction();
-  const isSuperAdmin = session?.user?.role === 'super_admin';
   const isAdminKecamatan = session?.user?.role === 'admin_kecamatan';
 
   const [params, setParams] = useState({
@@ -43,7 +42,7 @@ export default function MemberPage() {
 
   const [initialValues, setInitialValues] = useState<MemberPayload>({
     name: '',
-    institution_id: isSuperAdmin ? '' : session?.user?.institution_id || '',
+    institution_id: '',
     member_number: '',
     parent_number: '',
     phone: '',
@@ -131,7 +130,7 @@ export default function MemberPage() {
   const setInitial = (item: MemberData) => {
     setInitialValues({
       name: item.name,
-      institution_id: isSuperAdmin ? item.institution_id : session?.user?.institution_id || null,
+      institution_id: item.institution_id,
       member_number: item.member_number,
       parent_number: item.parent_number,
       phone: item.phone,
@@ -315,10 +314,19 @@ export default function MemberPage() {
           <FolderDown className="w-4 h-4 mr-2" />
           Excel
         </Button>
-      </div>
+      </div>,
     );
     return () => setButtonAction(undefined);
   }, [setButtonAction, isAdminKecamatan]);
+
+  useEffect(() => {
+    if (session?.user.role === 'user') {
+      setInitialValues((prev) => ({
+        ...prev,
+        institution_id: session.user.institution_id || '',
+      }));
+    }
+  }, [session]);
 
   const columns: ColumnDef<MemberData>[] = [
     {
@@ -362,13 +370,11 @@ export default function MemberPage() {
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Actions</DropdownMenuLabel>
-            {/* admin_kecamatan hanya bisa view (read-only) */}
-            {!isAdminKecamatan && (
-              <DropdownMenuItem onClick={() => handleEdit(item)}>
-                <Pencil className="mr-2 h-4 w-4" />
-                <span>Edit</span>
-              </DropdownMenuItem>
-            )}
+            <DropdownMenuItem onClick={() => handleEdit(item)}>
+              <Pencil className="mr-2 h-4 w-4" />
+              <span>Edit</span>
+            </DropdownMenuItem>
+
             <DropdownMenuItem onClick={() => handleDetail(item)}>
               <Eye className="mr-2 h-4 w-4" />
               <span>Detail</span>
@@ -465,7 +471,7 @@ export default function MemberPage() {
           });
         }}
         onSubmit={handleSubmit}
-        isLoading={isPending}
+        isLoading={createData.isPending}
       />
 
       <DetailModal open={isDetailOpen} onClose={() => setIsDetailOpen(false)} data={selectedMember} />

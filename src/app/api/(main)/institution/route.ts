@@ -2,7 +2,6 @@ import connect from '@/lib/db';
 import { NextRequest, NextResponse } from 'next/server';
 import Institution from '@/lib/modals/institution';
 import ActivityLog from '@/lib/modals/logs';
-import User from '@/lib/modals/user';
 import { getToken } from 'next-auth/jwt';
 
 export const GET = async (request: NextRequest) => {
@@ -15,7 +14,7 @@ export const GET = async (request: NextRequest) => {
     const limit = parseInt(searchParams.get('limit') || '10', 10);
     const skip = (page - 1) * limit;
 
-    if (page < 1 || limit < 1) {
+    if (page < -1 || (page < 1 && page !== -1) || limit < 1) {
       return new NextResponse('Invalid page or limit', { status: 400 });
     }
 
@@ -35,6 +34,27 @@ export const GET = async (request: NextRequest) => {
 
     const total_data = await Institution.countDocuments(baseFilter);
 
+    // Jika page = -1, return semua data tanpa pagination
+    if (page === -1) {
+      const data = await Institution.find(baseFilter).lean();
+
+      return new NextResponse(
+        JSON.stringify({
+          data,
+          pagination: {
+            total_data,
+            page: -1,
+            limit: total_data,
+            total_pages: 1,
+          },
+        }),
+        {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        },
+      );
+    }
+
     const data = await Institution.find(baseFilter).skip(skip).limit(limit).lean();
 
     return new NextResponse(
@@ -50,7 +70,7 @@ export const GET = async (request: NextRequest) => {
       {
         status: 200,
         headers: { 'Content-Type': 'application/json' },
-      }
+      },
     );
   } catch (error) {
     console.error('Error fetching data:', error);

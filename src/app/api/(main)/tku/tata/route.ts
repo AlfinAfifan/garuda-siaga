@@ -177,15 +177,15 @@ export const POST = async (req: Request) => {
       return new NextResponse('Member already has Tata data', { status: 400 });
     }
 
-    // Validasi jarak minimal 100 hari antara date_bantu dan tanggal input tata menggunakan moment.js
+    // Validasi jarak minimal 50 hari antara date_bantu dan tanggal input tata menggunakan moment.js
     const now = moment();
     const dateBantu = existingData.date_bantu ? moment(existingData.date_bantu) : null;
     if (!dateBantu) {
       return new NextResponse('Tanggal Bantu tidak ditemukan', { status: 400 });
     }
     const diffDays = now.diff(dateBantu, 'days');
-    if (diffDays < 100) {
-      return new NextResponse('Jarak antara tanggal Bantu dan Tata minimal 100 hari', { status: 400 });
+    if (diffDays < 50) {
+      return new NextResponse('Jarak antara tanggal Bantu dan Tata minimal 50 hari', { status: 400 });
     }
 
     // Ambil nomor urut SK
