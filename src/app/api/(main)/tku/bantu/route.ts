@@ -168,6 +168,11 @@ export const POST = async (req: Request) => {
       return new NextResponse('Member already has Bantu data', { status: 400 });
     }
 
+    const existingTku = await Tku.findOne({ member_id: existingData.member_id._id, bantu: true, is_delete: 0 });
+    if (existingTku) {
+      return new NextResponse('Member sudah memiliki data TKU Bantu', { status: 400 });
+    }
+
     // Validasi jarak minimal 50 hari antara date_mula dan tanggal input bantu menggunakan moment.js
     const now = moment();
     const dateMula = existingData.date_mula ? moment(existingData.date_mula) : null;

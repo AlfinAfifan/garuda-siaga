@@ -5,7 +5,6 @@ import '@/lib/modals/institution';
 import '@/lib/modals/member';
 import { getToken } from 'next-auth/jwt';
 import { Types } from 'mongoose';
-import moment from 'moment';
 import Member from '@/lib/modals/member';
 
 export const GET = async (req: NextRequest) => {
@@ -177,6 +176,11 @@ export const POST = async (req: Request) => {
     const institution = member.institution_id;
     if (!institution) {
       return new NextResponse('Institution not found', { status: 404 });
+    }
+
+    const existingTku = await Tku.findOne({ member_id, mula: true, is_delete: 0 });
+    if (existingTku) {
+      return new NextResponse('Member sudah memiliki data TKU Mula', { status: 400 });
     }
 
     // Ambil nomor urut SK
