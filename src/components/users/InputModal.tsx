@@ -15,7 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 const inputSchema = Yup.object().shape({
   name: Yup.string().required('Nama wajib diisi'),
   email: Yup.string().email('Format email tidak valid').required('Email wajib diisi'),
-  password: Yup.string(),
+  password: Yup.string().min(8, 'Password minimal 8 karakter').required('Password wajib diisi'),
   role: Yup.string().required('Role wajib diisi'),
   institution_id: Yup.string().nullable(),
 });
