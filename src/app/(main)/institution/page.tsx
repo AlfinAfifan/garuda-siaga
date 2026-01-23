@@ -150,7 +150,7 @@ export default function InstitutionPage() {
       utils.sheet_add_aoa(
         worksheet,
         [['Nama Lembaga', 'Alamat', 'Kecamatan', 'Gudep Putra', 'Gudep Putri', 'Kepala Gudep Putra', 'Kepala Gudep Putri', 'NTA Kepala Gudep Putra', 'NTA Kepala Gudep Putri', 'Nama Kepala Sekolah', 'NIP Kepala Sekolah']],
-        { origin: 'A1' }
+        { origin: 'A1' },
       );
 
       worksheet['!cols'] = [
@@ -202,18 +202,16 @@ export default function InstitutionPage() {
           <FolderDown className="w-4 h-4 mr-2" />
           Excel
         </Button>
-      </div>
+      </div>,
     );
     return () => setButtonAction(undefined);
   }, [setButtonAction]);
 
   const columns: ColumnDef<InstitutionData>[] = [
     { header: 'Nama Lembaga', accessor: 'name' },
-    { header: 'Alamat', accessor: 'address' },
     { header: 'No Gudep LK', accessor: 'gudep_man' },
     { header: 'No Gudep PR', accessor: 'gudep_woman' },
     { header: 'Kepsek', accessor: 'headmaster_name' },
-    { header: 'NIP Kepsek', accessor: 'headmaster_number' },
     {
       header: 'Actions',
       accessor: 'id',
