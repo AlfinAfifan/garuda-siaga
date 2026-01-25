@@ -56,16 +56,18 @@ export const GET = async (req: NextRequest) => {
       // Filter out members yang institution_id null (tidak match dengan sub_district)
       dataRaw = dataRaw.filter((item: any) => item.institution_id !== null);
     } else {
-      dataRaw = await Member.find(filter).skip(skip).limit(limit).populate({ path: 'institution_id', select: 'name' }).lean();
+      dataRaw = await Member.find(filter).skip(skip).limit(limit).populate({ path: 'institution_id', select: 'name sub_district' }).lean();
     }
 
     // Map institution_id to string and add institution_name
     const data = dataRaw.map((item: any) => {
       let institution_id = '';
       let institution_name = '';
+      let kwaran = '';
       if (item.institution_id && typeof item.institution_id === 'object') {
         institution_id = item.institution_id._id?.toString() || '';
         institution_name = item.institution_id.name || '';
+        kwaran = item.institution_id.sub_district || '';
       } else if (typeof item.institution_id === 'string') {
         institution_id = item.institution_id;
       }
@@ -73,6 +75,7 @@ export const GET = async (req: NextRequest) => {
         ...item,
         institution_id,
         institution_name,
+        kwaran,
       };
     });
 
@@ -90,7 +93,7 @@ export const GET = async (req: NextRequest) => {
       {
         status: 200,
         headers: { 'Content-Type': 'application/json' },
-      }
+      },
     );
   } catch (error) {
     console.error('Error fetching data:', error);
