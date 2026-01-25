@@ -104,10 +104,6 @@ export function InputModal({ open, onClose, onSubmit, initialValues, isLoading }
     ...initialValues,
   };
 
-  useEffect(() => {
-    console.log(defaultValues);
-  }, [defaultValues]);
-
   // Component untuk field input yang konsisten
   const InputField = ({ label, name, type = 'text', className = '', values, handleChange, handleBlur, setFieldValue, placeholder, isTextarea = false }: any) => (
     <div className={`space-y-1 ${className}`}>
@@ -174,7 +170,7 @@ export function InputModal({ open, onClose, onSubmit, initialValues, isLoading }
                 <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
               </svg>
             </div>
-            {initialValues ? 'Edit Anggota' : 'Tambah Anggota'}
+            Form Anggota
           </DialogTitle>
         </DialogHeader>
 
