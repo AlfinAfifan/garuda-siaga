@@ -27,7 +27,19 @@ export const getInstitution = async (params: GetParams) => {
     });
     return response.data;
   } catch (error: any) {
-    console.error('Error fetching instance:', error);
+    console.error('Error fetching institution:', error);
+    throw error.response?.data;
+  }
+};
+
+export const getAllInstitution = async (params: GetParams) => {
+  try {
+    const response = await axiosInstance('/institution/all', {
+      params,
+    });
+    return response.data;
+  } catch (error: any) {
+    console.error('Error fetching institution:', error);
     throw error.response?.data;
   }
 };
