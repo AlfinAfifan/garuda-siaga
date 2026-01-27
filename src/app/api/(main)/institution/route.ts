@@ -105,11 +105,6 @@ export const POST = async (req: NextRequest) => {
       sub_district = token.sub_district || sub_district;
     }
 
-    const existingInstitution = await Institution.findOne({ name });
-    if (existingInstitution) {
-      return new NextResponse('Institution already exists', { status: 400 });
-    }
-
     // Create a new institution
     const newInstitution = new Institution({ name, sub_district, address, gudep_man, gudep_woman, head_gudep_man, head_gudep_woman, nta_head_gudep_man, nta_head_gudep_woman, headmaster_name, headmaster_number });
     await newInstitution.save();
