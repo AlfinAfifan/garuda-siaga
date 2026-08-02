@@ -24,6 +24,9 @@ export const GET = async (req: NextRequest) => {
     const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
 
     const pipeline = [
+      // Filter TKK yang tidak terhapus
+      { $match: { is_delete: 0 } },
+
       // Lookup member terlebih dahulu
       {
         $lookup: {
@@ -34,6 +37,9 @@ export const GET = async (req: NextRequest) => {
         },
       },
       { $unwind: '$member' },
+
+      // Filter member yang tidak terhapus
+      { $match: { 'member.is_delete': 0 } },
 
       // Filter berdasarkan institution_id setelah member sudah di-lookup
       ...(token && token.role === 'user' && token.institution_id
@@ -77,6 +83,9 @@ export const GET = async (req: NextRequest) => {
         },
       },
       { $unwind: '$type_tkk' },
+
+      // Filter type TKK yang tidak terhapus
+      { $match: { 'type_tkk.is_delete': 0 } },
 
       // Filter search setelah semua lookup selesai
       ...(search
@@ -165,7 +174,7 @@ export const POST = async (req: Request) => {
     const body = await req.json();
     const { member_id, type_tkk_id, examiner_name, examiner_position, examiner_address } = body;
 
-    const dataTku = await Tku.findOne({ member_id, mula: true }).populate({ path: 'member_id', populate: { path: 'institution_id' } });
+    const dataTku = await Tku.findOne({ member_id, mula: true, is_delete: 0 }).populate({ path: 'member_id', populate: { path: 'institution_id' } });
     if (!dataTku.bantu || !dataTku.mula) {
       return new NextResponse('Bantu and Mula data must be completed before creating TKK', { status: 400 });
     }

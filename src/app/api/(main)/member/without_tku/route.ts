@@ -51,10 +51,11 @@ export const GET = async (req: NextRequest) => {
     const membersWithoutTku = await Member.aggregate([
       { $match: memberFilter },
       {
+        // Hanya ambil TKU yang tidak terhapus, supaya member yang TKU-nya sudah dihapus tetap terhitung
         $lookup: {
           from: 'tkus',
-          localField: '_id',
-          foreignField: 'member_id',
+          let: { memberId: '$_id' },
+          pipeline: [{ $match: { $expr: { $eq: ['$member_id', '$$memberId'] }, is_delete: 0 } }],
           as: 'tku',
         },
       },
@@ -63,12 +64,7 @@ export const GET = async (req: NextRequest) => {
           $or: [
             { tku: { $size: 0 } }, // Member tidak memiliki TKU sama sekali
             {
-              $and: [
-                { 'tku.is_delete': { $ne: 1 } }, // TKU tidak dihapus
-                { 'tku.mula': false },
-                { 'tku.bantu': false },
-                { 'tku.tata': false },
-              ],
+              $and: [{ 'tku.mula': false }, { 'tku.bantu': false }, { 'tku.tata': false }],
             },
           ],
         },
@@ -76,8 +72,8 @@ export const GET = async (req: NextRequest) => {
       {
         $lookup: {
           from: 'institutions',
-          localField: 'institution_id',
-          foreignField: '_id',
+          let: { institutionId: '$institution_id' },
+          pipeline: [{ $match: { $expr: { $eq: ['$_id', '$$institutionId'] }, is_delete: 0 } }],
           as: 'institution',
         },
       },

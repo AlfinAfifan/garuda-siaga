@@ -70,6 +70,7 @@ export const GET = async (req: NextRequest) => {
         {
           $match: {
             'member.institution_id': institutionObjectId,
+            'member.is_delete': 0,
             is_delete: 0,
           },
         },
@@ -106,6 +107,7 @@ export const GET = async (req: NextRequest) => {
         {
           $match: {
             'member.institution_id': institutionObjectId,
+            'member.is_delete': 0,
             is_delete: 0,
           },
         },
@@ -146,6 +148,7 @@ export const GET = async (req: NextRequest) => {
         {
           $match: {
             'member.institution_id': institutionObjectId,
+            'member.is_delete': 0,
             mula: true,
             is_delete: 0,
           },
@@ -167,6 +170,7 @@ export const GET = async (req: NextRequest) => {
         {
           $match: {
             'member.institution_id': institutionObjectId,
+            'member.is_delete': 0,
             bantu: true,
             is_delete: 0,
           },
@@ -188,6 +192,7 @@ export const GET = async (req: NextRequest) => {
         {
           $match: {
             'member.institution_id': institutionObjectId,
+            'member.is_delete': 0,
             tata: true,
             is_delete: 0,
           },
@@ -225,6 +230,7 @@ export const GET = async (req: NextRequest) => {
         {
           $match: {
             'member.institution_id': institutionObjectId,
+            'member.is_delete': 0,
             status: 0,
             is_delete: 0,
           },
@@ -246,6 +252,7 @@ export const GET = async (req: NextRequest) => {
         {
           $match: {
             'member.institution_id': institutionObjectId,
+            'member.is_delete': 0,
             status: 1,
             is_delete: 0,
           },

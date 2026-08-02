@@ -85,8 +85,8 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
 
     await connect();
 
-    const updatedData = await Member.findByIdAndUpdate(
-      id,
+    const updatedData = await Member.findOneAndUpdate(
+      { _id: id, is_delete: 0 },
       {
         name,
         phone,

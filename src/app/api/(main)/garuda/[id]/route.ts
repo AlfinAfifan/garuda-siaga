@@ -48,7 +48,7 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
       return new NextResponse('Invalid Garuda ID', { status: 400 });
     }
     await connect();
-    const updatedGaruda = await Garuda.findByIdAndUpdate(id, { status: 1, approved_by: token.name }, { new: true, runValidators: true }).populate({ path: 'member_id', select: 'name nta', model: Member });
+    const updatedGaruda = await Garuda.findOneAndUpdate({ _id: id, is_delete: 0 }, { status: 1, approved_by: token.name }, { new: true, runValidators: true }).populate({ path: 'member_id', select: 'name nta', model: Member });
     if (!updatedGaruda) {
       return new NextResponse('Garuda not found', { status: 404 });
     }

@@ -2,11 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import connect from '@/lib/db';
 import Garuda from '@/lib/modals/garuda';
 import Member from '@/lib/modals/member';
-import Institution from '@/lib/modals/institution';
 import ActivityLog from '@/lib/modals/logs';
 import { getToken } from 'next-auth/jwt';
 import Tkk from '@/lib/modals/tkk';
 import Tku from '@/lib/modals/tku';
+import TypeTkk from '@/lib/modals/type_tkk';
 import { Types } from 'mongoose';
 
 export async function GET(req: NextRequest) {
@@ -140,7 +140,9 @@ export const POST = async (req: NextRequest) => {
       return new NextResponse('Member not found', { status: 404 });
     }
 
-    const tkks = await Tkk.find({ member_id: member_id, is_delete: 0 }).lean();
+    const tkks = await Tkk.find({ member_id: member_id, is_delete: 0 })
+      .populate({ path: 'type_tkk_id', select: 'name sector', model: TypeTkk })
+      .lean();
     const tku = await Tku.find({ member_id: member_id, is_delete: 0 }).lean();
 
     let levelTku = '';
@@ -151,20 +153,23 @@ export const POST = async (req: NextRequest) => {
       else if (tkuItem.mula) levelTku = 'MULA';
     }
 
-    // Hitung jumlah TKK per bidang untuk masing-masing tingkat
-    const bidangTkk: Record<string, number> = {};
-    tkks.forEach((tkk) => {
-      const key = String(tkk.type_tkk_id);
-      bidangTkk[key] = (bidangTkk[key] || 0) + 1;
+    // Hitung jenis TKK unik per sector (jenis yang sama tidak dihitung dua kali)
+    const sectorTkk: Record<string, Set<string>> = {};
+    tkks.forEach((tkk: any) => {
+      const sector = tkk.type_tkk_id?.sector;
+      if (!sector) return;
+      if (!sectorTkk[sector]) sectorTkk[sector] = new Set();
+      sectorTkk[sector].add(String(tkk.type_tkk_id._id));
     });
 
-    // Syarat: TKU Tata, 4 TKK (masing-masing bidang berbeda)
-    const bidangKurangPurwa = Object.values(bidangTkk).filter((count) => count < 4).length > 0 || Object.keys(bidangTkk).length === 0;
+    // Syarat: TKU Tata, kelima sector terisi dengan minimal 4 TKK per sector
+    const TOTAL_SECTOR = 5;
+    const bidangKurangPurwa = Object.keys(sectorTkk).length < TOTAL_SECTOR || Object.values(sectorTkk).some((set) => set.size < 4);
 
     if (levelTku !== 'TATA' || bidangKurangPurwa) {
       return new NextResponse(
         JSON.stringify({
-          message: 'Syarat tidak terpenuhi: TKU harus Tata, 4 TKK per bidang',
+          message: 'Syarat tidak terpenuhi: TKU harus Tata, minimal 4 TKK pada masing-masing 5 bidang',
         }),
         { status: 400, headers: { 'Content-Type': 'application/json' } }
       );
@@ -172,7 +177,7 @@ export const POST = async (req: NextRequest) => {
 
     // --- END VALIDATION ---
     // Cek jika member_id sudah ada di Garuda
-    const existingGaruda = await Garuda.findOne({ member_id: member_id });
+    const existingGaruda = await Garuda.findOne({ member_id: member_id, is_delete: 0 });
     if (existingGaruda) {
       return new NextResponse(JSON.stringify({ message: 'Member ini sudah terdaftar di data Garuda.' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
     }
@@ -186,7 +191,7 @@ export const POST = async (req: NextRequest) => {
     await ActivityLog.create({
       user_id: user_id,
       action: 'create',
-      description: `Menambahkan data Garuda untuk user ${newGaruda.user_id?.name || ''}`,
+      description: `Menambahkan data Garuda untuk user ${newGaruda.member_id?.name || ''}`,
       module: 'Garuda',
     });
 

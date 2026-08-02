@@ -38,7 +38,7 @@ export const PATCH = async (req: Request, { params }: { params: Promise<{ id: st
 
     await connect();
 
-    const updatedData = await TypeTkk.findByIdAndUpdate(id, { name, sector, color }, { new: true, runValidators: true });
+    const updatedData = await TypeTkk.findOneAndUpdate({ _id: id, is_delete: 0 }, { name, sector, color }, { new: true, runValidators: true });
 
     if (!updatedData) {
       return new NextResponse('Data not found', { status: 404 });

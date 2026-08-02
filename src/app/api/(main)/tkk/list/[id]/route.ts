@@ -14,7 +14,7 @@ export const GET = async (req: Request, { params }: { params: Promise<{ id: stri
     await connect();
 
     const pipeline = [
-      { $match: { _id: new Types.ObjectId(id) } },
+      { $match: { _id: new Types.ObjectId(id), is_delete: 0 } },
       {
         $lookup: {
           from: 'typetkks',
@@ -24,6 +24,8 @@ export const GET = async (req: Request, { params }: { params: Promise<{ id: stri
         },
       },
       { $unwind: '$type_tkk' },
+      // Filter type TKK yang tidak terhapus
+      { $match: { 'type_tkk.is_delete': 0 } },
       {
         $lookup: {
           from: 'members',
@@ -33,6 +35,8 @@ export const GET = async (req: Request, { params }: { params: Promise<{ id: stri
         },
       },
       { $unwind: '$member' },
+      // Filter member yang tidak terhapus
+      { $match: { 'member.is_delete': 0 } },
       {
         $lookup: {
           from: 'institutions',
