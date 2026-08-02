@@ -1,16 +1,9 @@
 import connect from '@/lib/db';
 import { NextRequest, NextResponse } from 'next/server';
-import Tkk from '@/lib/modals/tkk';
-import { getToken } from 'next-auth/jwt';
-import Member from '@/lib/modals/member';
-import { Types } from 'mongoose';
 
 export const GET = async (req: NextRequest) => {
   try {
     await connect();
-
-    // Ambil token user
-    const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
 
     // let baseFilter: any = {};
 

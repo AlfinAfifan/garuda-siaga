@@ -117,9 +117,11 @@ export default function TKKPage() {
       const response = await exportTkk();
 
       const rows = response.data.map((item: any) => ({
-        Nama: item.member_name || '',
-        NTA: item.member_number || '',
-        Lembaga: item.institution_name || '',
+        Nama: item.member?.name || '',
+        NTA: item.member?.member_number || '',
+        Lembaga: item.institution?.name || '',
+        TKK: item.type_tkk?.name || '',
+        "Warna TKK": item.type_tkk?.color || '',
         Tanggal: item.date || '',
         SK: item.sk || '',
         Penguji: item.examiner_name || '',
@@ -131,16 +133,19 @@ export default function TKKPage() {
       const workbook = utils.book_new();
 
       utils.book_append_sheet(workbook, worksheet, 'RekapTKK');
-      utils.sheet_add_aoa(worksheet, [['Nama', 'NTA', 'Lembaga', 'Tanggal', 'SK', 'Penguji', 'Posisi Penguji', 'Alamat Penguji']], { origin: 'A1' });
+      utils.sheet_add_aoa(worksheet, [['Nama', 'NTA', 'Lembaga', 'TKK', 'Warna', 'Tanggal', 'SK', 'Penguji', 'Posisi Penguji', 'Alamat Penguji']], { origin: 'A1' });
 
       worksheet['!cols'] = [
         { wch: 20 }, // Nama
         { wch: 15 }, // NTA
         { wch: 25 }, // Lembaga
-        { wch: 10 }, // TKK
+        { wch: 20 }, // TKK
+        { wch: 12 }, // Warna
         { wch: 15 }, // Tanggal
         { wch: 20 }, // SK
         { wch: 25 }, // Penguji
+        { wch: 20 }, // Posisi Penguji
+        { wch: 30 }, // Alamat Penguji
       ];
 
       writeFile(workbook, 'RekapTKK.xlsx', {
@@ -191,6 +196,11 @@ export default function TKKPage() {
     {
       header: 'Jenis TKK',
       accessor: 'type_tkk.name',
+    },
+    {
+      header: 'Warna TKK',
+      accessor: 'type_tkk.color',
+      cell: (item) => item.type_tkk?.color || '-',
     },
     {
       header: 'SK',

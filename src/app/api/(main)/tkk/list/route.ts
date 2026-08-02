@@ -132,6 +132,7 @@ export const GET = async (req: NextRequest) => {
                 'institution._id': 1,
                 'type_tkk._id': 1,
                 'type_tkk.name': 1,
+                'type_tkk.color': 1,
               },
             },
           ],
@@ -179,6 +180,15 @@ export const POST = async (req: Request) => {
       return new NextResponse('Bantu and Mula data must be completed before creating TKK', { status: 400 });
     }
 
+    // Satu member tidak boleh punya dua TKK aktif dengan jenis yang sama
+    const duplicateTkk = await Tkk.findOne({ member_id, type_tkk_id, is_delete: 0 });
+    if (duplicateTkk) {
+      return new NextResponse(JSON.stringify({ message: 'Member ini sudah memiliki TKK dengan jenis yang sama.' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
     // Ambil nomor urut SK
     const lastTkk = await Tkk.findOne({}, { sort: { createdAt: -1 } });
     let nomorUrut = 1;
@@ -213,6 +223,13 @@ export const POST = async (req: Request) => {
       headers: { 'Content-Type': 'application/json' },
     });
   } catch (error: any) {
+    // Kena unique index saat dua request masuk bersamaan
+    if (error?.code === 11000) {
+      return new NextResponse(JSON.stringify({ message: 'Member ini sudah memiliki TKK dengan jenis yang sama.' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
     console.error('Error creating data:', error);
     return new NextResponse('Internal Server Error' + error.message, { status: 500 });
   }

@@ -39,6 +39,10 @@ const tkkSchema = new Schema(
   }
 );
 
+// Satu member hanya boleh punya satu TKK aktif per jenis.
+// Partial index: data yang sudah di-soft-delete tidak ikut, sehingga jenis yang sama boleh diinput ulang.
+tkkSchema.index({ member_id: 1, type_tkk_id: 1 }, { unique: true, partialFilterExpression: { is_delete: 0 } });
+
 const Tkk = models.Tkk || model('Tkk', tkkSchema);
 
 export default Tkk;

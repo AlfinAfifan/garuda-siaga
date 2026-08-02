@@ -11,6 +11,7 @@ export interface TkkData {
   type_tkk: {
     id: string;
     name: string;
+    color: string;
   };
   member?: {
     name: string;

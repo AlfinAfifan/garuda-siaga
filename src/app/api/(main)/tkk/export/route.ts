@@ -45,6 +45,17 @@ export const GET = async (req: NextRequest) => {
       { $match: { 'member.is_delete': 0 } },
       {
         $lookup: {
+          from: 'typetkks',
+          localField: 'type_tkk_id',
+          foreignField: '_id',
+          as: 'type_tkk',
+        },
+      },
+      { $unwind: '$type_tkk' },
+      // Filter type TKK yang tidak terhapus
+      { $match: { 'type_tkk.is_delete': 0 } },
+      {
+        $lookup: {
           from: 'institutions',
           localField: 'member.institution_id',
           foreignField: '_id',
@@ -58,18 +69,22 @@ export const GET = async (req: NextRequest) => {
       {
         $project: {
           _id: 1,
-          member_name: '$member.name',
-          member_number: '$member.member_number',
-          institution_name: '$institution.name',
-          institution_id: '$institution._id',
-          type_tkk_id: 1,
           sk: 1,
+          member_id: 1,
           date: 1,
           examiner_name: 1,
           examiner_position: 1,
           examiner_address: 1,
           createdAt: 1,
           updatedAt: 1,
+          'member.name': 1,
+          'member.member_number': 1,
+          'member.phone': 1,
+          'institution.name': 1,
+          'institution._id': 1,
+          'type_tkk._id': 1,
+          'type_tkk.name': 1,
+          'type_tkk.color': 1,
         },
       },
     ];
