@@ -133,7 +133,7 @@ export default function TKKPage() {
       const workbook = utils.book_new();
 
       utils.book_append_sheet(workbook, worksheet, 'RekapTKK');
-      utils.sheet_add_aoa(worksheet, [['Nama', 'NTA', 'Lembaga', 'TKK', 'Warna', 'Tanggal', 'SK', 'Penguji', 'Posisi Penguji', 'Alamat Penguji']], { origin: 'A1' });
+      utils.sheet_add_aoa(worksheet, [['Nama', 'NTA', 'Lembaga', 'TKK', 'Warna TKK', 'Tanggal', 'SK', 'Penguji', 'Posisi Penguji', 'Alamat Penguji']], { origin: 'A1' });
 
       worksheet['!cols'] = [
         { wch: 20 }, // Nama

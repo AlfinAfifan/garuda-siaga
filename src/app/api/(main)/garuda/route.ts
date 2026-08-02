@@ -93,6 +93,7 @@ export async function GET(req: NextRequest) {
                 nta: '$member.member_number',
               },
               level_tku: 1,
+              total_tkk: 1,
               status: 1,
               approved_by: 1,
               createdAt: 1,
