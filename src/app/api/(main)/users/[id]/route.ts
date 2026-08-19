@@ -48,10 +48,14 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
     // Connect to the database
     await connect();
 
-    const hashedPassword = await hash(password, 10);
+    // Only update the password when a new one is provided
+    const updateFields: Record<string, unknown> = { name, email, role, institution_id, sub_district };
+    if (password) {
+      updateFields.password = await hash(password, 10);
+    }
 
     // Find the user by ID and update
-    const updatedUser = await User.findOneAndUpdate({ _id: id, is_delete: 0 }, { name, email, password: hashedPassword, role, institution_id, sub_district }, { new: true, runValidators: true }).select('-password');
+    const updatedUser = await User.findOneAndUpdate({ _id: id, is_delete: 0 }, updateFields, { new: true, runValidators: true }).select('-password');
 
     if (!updatedUser) {
       return new NextResponse('User not found', { status: 404 });

@@ -11,14 +11,18 @@ import { SearchableSelect } from '../ui/searchable-select';
 import { getInstitution } from '@/services/instantion';
 import { useQuery } from '@tanstack/react-query';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Eye, EyeOff } from 'lucide-react';
 
-const inputSchema = Yup.object().shape({
-  name: Yup.string().required('Nama wajib diisi'),
-  email: Yup.string().email('Format email tidak valid').required('Email wajib diisi'),
-  password: Yup.string().min(8, 'Password minimal 8 karakter').required('Password wajib diisi'),
-  role: Yup.string().required('Role wajib diisi'),
-  institution_id: Yup.string().nullable(),
-});
+const getInputSchema = (isEdit: boolean) =>
+  Yup.object().shape({
+    name: Yup.string().required('Nama wajib diisi'),
+    email: Yup.string().email('Format email tidak valid').required('Email wajib diisi'),
+    password: isEdit
+      ? Yup.string().test('min-password', 'Password minimal 8 karakter', (value) => !value || value.length >= 8)
+      : Yup.string().min(8, 'Password minimal 8 karakter').required('Password wajib diisi'),
+    role: Yup.string().required('Role wajib diisi'),
+    institution_id: Yup.string().nullable(),
+  });
 
 interface InputModalProps {
   open: boolean;
@@ -26,6 +30,7 @@ interface InputModalProps {
   onSubmit: (values: any) => void;
   initialValues?: Partial<any>;
   isLoading?: boolean;
+  isEdit?: boolean;
 }
 
 const list_sub_districts = [
@@ -45,7 +50,7 @@ const list_sub_districts = [
   { _id: 'watulimo', name: 'Watulimo' },
 ];
 
-export function InputModal({ open, onClose, onSubmit, initialValues, isLoading }: InputModalProps) {
+export function InputModal({ open, onClose, onSubmit, initialValues, isLoading, isEdit = false }: InputModalProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [paramsInstitution, setParamsInstitution] = useState({ search: '', page: 1, limit: 10 });
   const [paramsSubDistrict, setParamsSubDistrict] = useState({ search: '', page: 1, limit: 10 });
@@ -59,9 +64,9 @@ export function InputModal({ open, onClose, onSubmit, initialValues, isLoading }
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-xl ">
         <DialogHeader>
-          <DialogTitle>Tambah User</DialogTitle>
+          <DialogTitle>Tambah / Edit User</DialogTitle>
         </DialogHeader>
-        <Formik initialValues={initialValues} validationSchema={inputSchema} onSubmit={onSubmit}>
+        <Formik initialValues={initialValues} validationSchema={getInputSchema(isEdit)} onSubmit={onSubmit}>
           {({ values, handleChange, handleBlur, setFieldValue }) => (
             <Form className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-5 gap-y-7 my-4">
@@ -131,8 +136,28 @@ export function InputModal({ open, onClose, onSubmit, initialValues, isLoading }
                   <ErrorMessage name="email" component="div" className="text-red-500 text-xs mt-1" />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="password">Password</Label>
-                  <Input id="password" name="password" type={showPassword ? 'text' : 'password'} placeholder="Masukkan password" value={values.password} onChange={handleChange} onBlur={handleBlur} />
+                  <Label htmlFor="password">Password {isEdit && <span className="text-muted-foreground text-xs font-normal">(kosongkan jika tidak diubah)</span>}</Label>
+                  <div className="relative">
+                    <Input
+                      id="password"
+                      name="password"
+                      type={showPassword ? 'text' : 'password'}
+                      placeholder={isEdit ? 'Masukkan password baru' : 'Masukkan password'}
+                      value={values.password}
+                      onChange={handleChange}
+                      onBlur={handleBlur}
+                      className="pr-9"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((prev) => !prev)}
+                      className="absolute inset-y-0 right-0 flex items-center px-3 text-muted-foreground hover:text-foreground"
+                      tabIndex={-1}
+                      aria-label={showPassword ? 'Sembunyikan password' : 'Tampilkan password'}
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
                   <ErrorMessage name="password" component="div" className="text-red-500 text-xs mt-1" />
                 </div>
               </div>

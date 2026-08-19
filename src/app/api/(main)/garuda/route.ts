@@ -15,6 +15,7 @@ export async function GET(req: NextRequest) {
   const page = parseInt(searchParams.get('page') || '1', 10);
   const limit = parseInt(searchParams.get('limit') || '10', 10);
   const search = searchParams.get('search') || '';
+  const institution_id = searchParams.get('institution_id') || '';
 
   const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
 
@@ -36,6 +37,17 @@ export async function GET(req: NextRequest) {
     // Filter member yang tidak terhapus
     { $match: { 'member.is_delete': 0 } },
 
+    // Ambil data lembaga dari member (ditampilkan di tabel & dipakai untuk filter)
+    {
+      $lookup: {
+        from: 'institutions',
+        localField: 'member.institution_id',
+        foreignField: '_id',
+        as: 'institution',
+      },
+    },
+    { $unwind: { path: '$institution', preserveNullAndEmptyArrays: true } },
+
     ...(token && token.role === 'user' && token.institution_id
       ? [
           {
@@ -49,18 +61,19 @@ export async function GET(req: NextRequest) {
     ...(token && token.role === 'admin_kecamatan' && token.sub_district
       ? [
           {
-            $lookup: {
-              from: 'institutions',
-              localField: 'member.institution_id',
-              foreignField: '_id',
-              as: 'institution',
-            },
-          },
-          { $unwind: '$institution' },
-          {
             $match: {
               'institution.sub_district': token.sub_district,
               'institution.is_delete': 0,
+            },
+          },
+        ]
+      : []),
+
+    ...(institution_id && Types.ObjectId.isValid(institution_id)
+      ? [
+          {
+            $match: {
+              'member.institution_id': new Types.ObjectId(institution_id),
             },
           },
         ]
@@ -91,6 +104,10 @@ export async function GET(req: NextRequest) {
                 _id: '$member._id',
                 name: '$member.name',
                 nta: '$member.member_number',
+              },
+              institution: {
+                _id: '$institution._id',
+                name: '$institution.name',
               },
               level_tku: 1,
               total_tkk: 1,

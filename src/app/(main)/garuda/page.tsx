@@ -16,6 +16,8 @@ import { approveGaruda, createGaruda, deleteGaruda, GarudaPayload, getGaruda, ge
 import { InputModal } from '@/components/garuda/InputModal';
 import { UpdateConfirmation } from '@/components/ui/update-confirmation';
 import { useSession } from 'next-auth/react';
+import { SearchableSelect } from '@/components/ui/searchable-select';
+import { getInstitution } from '@/services/instantion';
 
 export default function GarudaPage() {
   const { data: session } = useSession();
@@ -28,7 +30,8 @@ export default function GarudaPage() {
   const [deleteModal, setDeleteModal] = useState(false);
   const [updateConfirmModal, setUpdateConfirmModal] = useState(false);
 
-  const [params, setParams] = useState({ search: '', page: 1, limit: 10 });
+  const [params, setParams] = useState({ search: '', institution_id: '', page: 1, limit: 10 });
+  const [paramsInstitution, setParamsInstitution] = useState({ search: '', page: 1, limit: 10 });
 
   const [editingData, setEditingData] = useState<GarudaData | null>(null);
   const [dataDelete, setDataDelete] = useState<GarudaData | null>(null);
@@ -49,6 +52,13 @@ export default function GarudaPage() {
     queryFn: () => getGaruda(params),
     retry: 1,
     retryDelay: 1000,
+  });
+
+  // Opsi filter lembaga, user hanya melihat lembaganya sendiri jadi filter tidak perlu
+  const { data: dataInstitution, isPending: isPendingInstitution } = useQuery({
+    queryKey: ['institutions', paramsInstitution],
+    queryFn: () => getInstitution(paramsInstitution),
+    enabled: !isUser,
   });
 
   const createData = useMutation({
@@ -135,6 +145,7 @@ export default function GarudaPage() {
   const columns: ColumnDef<GarudaData>[] = [
     { header: 'Anggota', accessor: 'member_id.name' },
     { header: 'NTA', accessor: 'member_id.nta' },
+    { header: 'Lembaga', accessor: 'institution.name', cell: (item) => item.institution?.name || '-' },
     { header: 'Level TKU', accessor: 'level_tku' },
     { header: 'Total TKK', accessor: 'total_tkk' },
     { header: 'Status', accessor: 'status', cell: (item) => getStatusBadge(item.status) },
@@ -203,15 +214,40 @@ export default function GarudaPage() {
       <Card>
         <CardHeader>
           <CardTitle>Daftar Garuda</CardTitle>
-          <CardAction className="w-80">
-            <div className="relative max-w-md w-full">
-              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input placeholder="Cari berdasarkan nama..." value={params.search} onChange={(e) => setParams((prev) => ({ ...prev, search: e.target.value }))} className="pl-8 w-full" />
-              {params.search && (
-                <button onClick={() => setParams((prev) => ({ ...prev, search: '' }))} className="absolute right-2 top-2.5 text-muted-foreground hover:text-foreground">
-                  <X className="h-4 w-4" />
-                </button>
+          <CardAction className={isUser ? 'w-80' : 'w-[35rem]'}>
+            <div className="flex items-center gap-3">
+              {!isUser && (
+                <div className="relative w-60">
+                  <SearchableSelect
+                    value={params.institution_id}
+                    options={dataInstitution?.data ?? []}
+                    isLoading={isPendingInstitution}
+                    placeholder="Semua lembaga"
+                    searchValue={paramsInstitution.search}
+                    onValueChange={(value) => setParams((prev) => ({ ...prev, institution_id: value, page: 1 }))}
+                    onSearchChange={(value) => setParamsInstitution((prev) => ({ ...prev, search: value }))}
+                    className={params.institution_id ? 'pr-8' : ''}
+                  />
+                  {params.institution_id && (
+                    <button
+                      onClick={() => setParams((prev) => ({ ...prev, institution_id: '', page: 1 }))}
+                      className="absolute right-7 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      aria-label="Hapus filter lembaga"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  )}
+                </div>
               )}
+              <div className="relative max-w-md w-full">
+                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input placeholder="Cari berdasarkan nama..." value={params.search} onChange={(e) => setParams((prev) => ({ ...prev, search: e.target.value, page: 1 }))} className="pl-8 w-full" />
+                {params.search && (
+                  <button onClick={() => setParams((prev) => ({ ...prev, search: '', page: 1 }))} className="absolute right-2 top-2.5 text-muted-foreground hover:text-foreground">
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
             </div>
           </CardAction>
         </CardHeader>
