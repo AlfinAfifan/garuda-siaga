@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, CardAction } from '@/components/ui/card';
-import { CheckCircle, CircleCheckBig, Clock, FileDown, FileText, Plus, Search, SquarePen, Trash2, Trophy, X } from 'lucide-react';
+import { CheckCircle, CircleCheckBig, Clock, FileDown, FileText, Plus, Printer, Search, SquarePen, Trash2, Trophy, X } from 'lucide-react';
 import { DataTable, ColumnDef } from '@/components/ui/data-table';
 import { CustomPagination } from '@/components/ui/pagination';
 import { Button } from '@/components/ui/button';
@@ -19,7 +19,19 @@ import { useSession } from 'next-auth/react';
 import { SearchableSelect } from '@/components/ui/searchable-select';
 import { getInstitution } from '@/services/instantion';
 import moment from 'moment';
-import { downloadGarudaCertificate } from '@/lib/generate-certificate';
+import { downloadGarudaCertificate, downloadGarudaCertificates, MAX_BULK_CERTIFICATE } from '@/lib/generate-certificate';
+import { Checkbox } from '@/components/ui/checkbox';
+import type { CertificateData } from '@/components/garuda/CertificateDocument';
+
+/** Ubah satu baris garuda jadi data yang dibutuhkan template sertifikat */
+const toCertificateData = (item: GarudaData): CertificateData => ({
+  name: item.member_id?.name || '',
+  nta: item.member_id?.nta || '',
+  institution: item.institution?.name || '',
+  date: item.approved_at,
+  number: item.certificate_number,
+  year: item.certificate_year,
+});
 
 export default function GarudaPage() {
   const { data: session } = useSession();
@@ -36,6 +48,9 @@ export default function GarudaPage() {
   const [paramsInstitution, setParamsInstitution] = useState({ search: '', page: 1, limit: 10 });
 
   const [certificateId, setCertificateId] = useState<string | null>(null);
+  // Sertifikat yang dicentang untuk cetak massal, disimpan utuh supaya pilihan bertahan lintas halaman
+  const [selectedCertificates, setSelectedCertificates] = useState<GarudaData[]>([]);
+  const [isBulkPrinting, setIsBulkPrinting] = useState(false);
 
   const [editingData, setEditingData] = useState<GarudaData | null>(null);
   const [dataDelete, setDataDelete] = useState<GarudaData | null>(null);
@@ -117,24 +132,74 @@ export default function GarudaPage() {
     setUpdateConfirmModal(true);
   };
 
+  const selectedIds = useMemo(() => new Set(selectedCertificates.map((item) => item._id)), [selectedCertificates]);
+
+  // Hanya data approved yang punya sertifikat untuk dicetak
+  const printableRows = useMemo(() => ((data?.data ?? []) as GarudaData[]).filter((item) => item.status === 1), [data]);
+  const selectedOnPage = printableRows.filter((item) => selectedIds.has(item._id));
+  const isAllPageSelected = printableRows.length > 0 && selectedOnPage.length === printableRows.length;
+
+  const handleToggleCertificate = (item: GarudaData) => {
+    if (selectedIds.has(item._id)) {
+      setSelectedCertificates((prev) => prev.filter((selected) => selected._id !== item._id));
+      return;
+    }
+
+    if (selectedCertificates.length >= MAX_BULK_CERTIFICATE) {
+      toast.error(`Maksimal ${MAX_BULK_CERTIFICATE} sertifikat sekali cetak`);
+      return;
+    }
+
+    setSelectedCertificates((prev) => [...prev, item]);
+  };
+
+  const handleToggleAllOnPage = () => {
+    if (isAllPageSelected) {
+      setSelectedCertificates((prev) => prev.filter((selected) => !printableRows.some((item) => item._id === selected._id)));
+      return;
+    }
+
+    const additions = printableRows.filter((item) => !selectedIds.has(item._id));
+    const availableSlot = MAX_BULK_CERTIFICATE - selectedCertificates.length;
+
+    if (availableSlot <= 0) {
+      toast.error(`Maksimal ${MAX_BULK_CERTIFICATE} sertifikat sekali cetak`);
+      return;
+    }
+
+    if (additions.length > availableSlot) {
+      toast(`Hanya ${availableSlot} data ditambahkan, maksimal ${MAX_BULK_CERTIFICATE} sertifikat sekali cetak`);
+    }
+
+    setSelectedCertificates((prev) => [...prev, ...additions.slice(0, availableSlot)]);
+  };
+
+  const handleBulkPrintCertificate = async () => {
+    if (!selectedCertificates.length) return;
+
+    setIsBulkPrinting(true);
+    try {
+      await toast.promise(downloadGarudaCertificates(selectedCertificates.map(toCertificateData)), {
+        loading: `Menyiapkan ${selectedCertificates.length} sertifikat...`,
+        success: 'Sertifikat berhasil diunduh!',
+        error: (err) => `Gagal membuat sertifikat: ${err.message}`,
+      });
+      setSelectedCertificates([]);
+    } catch {
+      // pesan error sudah ditampilkan lewat toast
+    } finally {
+      setIsBulkPrinting(false);
+    }
+  };
+
   const handleDownloadCertificate = async (item: GarudaData) => {
     setCertificateId(item._id);
     try {
-      await toast.promise(
-        downloadGarudaCertificate({
-          name: item.member_id?.name || '',
-          nta: item.member_id?.nta || '',
-          institution: item.institution?.name || '',
-          date: item.approved_at,
-          number: item.certificate_number,
-          year: item.certificate_year,
-        }),
-        {
-          loading: 'Menyiapkan sertifikat...',
-          success: 'Sertifikat berhasil diunduh!',
-          error: (err) => `Gagal membuat sertifikat: ${err.message}`,
-        },
-      );
+      await toast.promise(downloadGarudaCertificate(toCertificateData(item)), {
+        loading: 'Menyiapkan sertifikat...',
+        success: 'Sertifikat berhasil diunduh!',
+        error: (err) => `Gagal membuat sertifikat: ${err.message}`,
+      });
     } finally {
       setCertificateId(null);
     }
@@ -170,6 +235,28 @@ export default function GarudaPage() {
   }, [setButtonAction, isAdminKecamatan]);
 
   const columns: ColumnDef<GarudaData>[] = [
+    {
+      id: 'select',
+      className: 'w-10',
+      header: (
+        <Checkbox
+          checked={isAllPageSelected}
+          indeterminate={selectedOnPage.length > 0}
+          disabled={printableRows.length === 0}
+          onChange={handleToggleAllOnPage}
+          aria-label="Pilih semua sertifikat di halaman ini"
+        />
+      ),
+      cell: (item) => (
+        <Checkbox
+          checked={selectedIds.has(item._id)}
+          disabled={item.status !== 1}
+          onChange={() => handleToggleCertificate(item)}
+          title={item.status === 1 ? 'Pilih untuk cetak massal' : 'Hanya data approved yang bisa dicetak'}
+          aria-label={`Pilih sertifikat ${item.member_id?.name || ''}`}
+        />
+      ),
+    },
     { header: 'Anggota', accessor: 'member_id.name' },
     { header: 'NTA', accessor: 'member_id.nta' },
     { header: 'Lembaga', accessor: 'institution.name', cell: (item) => item.institution?.name || '-' },
@@ -290,6 +377,22 @@ export default function GarudaPage() {
           </CardAction>
         </CardHeader>
         <CardContent>
+          {selectedCertificates.length > 0 && (
+            <div className="mb-4 flex flex-col gap-3 rounded-md border border-primary-200 bg-primary-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-sm text-primary-800">
+                <span className="font-semibold">{selectedCertificates.length}</span> dari maksimal {MAX_BULK_CERTIFICATE} sertifikat dipilih
+              </p>
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="sm" onClick={() => setSelectedCertificates([])} disabled={isBulkPrinting}>
+                  Batal Pilih
+                </Button>
+                <Button size="sm" className="bg-primary-600 hover:bg-primary-700" onClick={handleBulkPrintCertificate} disabled={isBulkPrinting}>
+                  <Printer className="mr-2 h-4 w-4" />
+                  {isBulkPrinting ? 'Menyiapkan...' : 'Cetak Sertifikat'}
+                </Button>
+              </div>
+            </div>
+          )}
           <DataTable
             columns={columns}
             data={data?.data}

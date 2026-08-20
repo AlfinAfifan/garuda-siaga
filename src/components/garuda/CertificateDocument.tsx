@@ -129,67 +129,81 @@ const styles = StyleSheet.create({
   },
 });
 
-export const CertificateDocument = ({ data, frameSrc, logoSrc }: { data: CertificateData; frameSrc: string; logoSrc: string }) => {
+/** Satu halaman sertifikat, dipakai ulang untuk unduhan satuan maupun massal. */
+const CertificatePage = ({ data, frameSrc, logoSrc }: { data: CertificateData; frameSrc: string; logoSrc: string }) => {
   const year = data.year ?? (data.date ? new Date(data.date).getFullYear() : new Date().getFullYear());
   const number = formatCertificateNumber(data.number);
 
   return (
-    <Document title={`Sertifikat Pramuka Siaga Garuda - ${data.name}`} author={CERTIFICATE_CONFIG.kwarcab.replace('\n', ' ')}>
-      <Page size="A4" style={styles.page}>
-        <Image src={frameSrc} style={styles.frame} fixed />
+    <Page size="A4" style={styles.page}>
+      <Image src={frameSrc} style={styles.frame} fixed />
 
-        <View style={styles.content}>
-          <Image src={logoSrc} style={styles.logo} />
+      <View style={styles.content}>
+        <Image src={logoSrc} style={styles.logo} />
 
-          <Text style={styles.title}>SERTIFIKAT</Text>
-          <Text style={styles.number}>{`Nomor : ${number}/${CERTIFICATE_CONFIG.number_suffix}/${year}`}</Text>
+        <Text style={styles.title}>SERTIFIKAT</Text>
+        <Text style={styles.number}>{`Nomor : ${number}/${CERTIFICATE_CONFIG.number_suffix}/${year}`}</Text>
 
-          <View style={styles.identity}>
-            <View style={styles.row}>
-              <Text style={styles.label}>Diberikan Kepada</Text>
-              <Text style={styles.colon}>:</Text>
-            </View>
-            <View style={styles.row}>
-              <Text style={styles.label}>Nama</Text>
-              <Text style={styles.colon}>:</Text>
-              <Text style={styles.value}>{data.name || '-'}</Text>
-            </View>
-            <View style={styles.row}>
-              <Text style={styles.label}>NTA</Text>
-              <Text style={styles.colon}>:</Text>
-              <Text style={styles.value}>{data.nta || '-'}</Text>
-            </View>
-            <View style={styles.row}>
-              <Text style={styles.label}>Pangkalan</Text>
-              <Text style={styles.colon}>:</Text>
-              <Text style={styles.value}>{data.institution || '-'}</Text>
-            </View>
+        <View style={styles.identity}>
+          <View style={styles.row}>
+            <Text style={styles.label}>Diberikan Kepada</Text>
+            <Text style={styles.colon}>:</Text>
           </View>
-
-          <Text style={styles.as}>Sebagai</Text>
-          <Text style={styles.award}>PRAMUKA SIAGA GARUDA</Text>
-
-          <Text style={styles.description}>
-            Yang telah menyelesaikan SPG tersebut diatas, dan berhak untuk mengenakan Tanda Kecakapan Pramuka Garuda. Dengan harapan senantiasa meningkatkan keterampilan dan pengetahuannya berdasarkan Dwi
-            Satya dan Dwi Darma Pramuka.
-          </Text>
-
-          <View style={styles.signature}>
-            <Text style={styles.signatureLine}>{`Ditetapkan di  : ${CERTIFICATE_CONFIG.city}`}</Text>
-            <Text style={styles.signatureLine}>{`Pada tanggal  : ${formatIndonesianDate(data.date)}`}</Text>
-
-            <View style={styles.signatureBlock}>
-              <Text>{CERTIFICATE_CONFIG.kwarcab}</Text>
-              <Text>{CERTIFICATE_CONFIG.position}</Text>
-            </View>
-
-            <Text style={styles.signerName}>{CERTIFICATE_CONFIG.signer_name}</Text>
-            <Text style={styles.signerNta}>{CERTIFICATE_CONFIG.signer_nta}</Text>
+          <View style={styles.row}>
+            <Text style={styles.label}>Nama</Text>
+            <Text style={styles.colon}>:</Text>
+            <Text style={styles.value}>{data.name || '-'}</Text>
+          </View>
+          <View style={styles.row}>
+            <Text style={styles.label}>NTA</Text>
+            <Text style={styles.colon}>:</Text>
+            <Text style={styles.value}>{data.nta || '-'}</Text>
+          </View>
+          <View style={styles.row}>
+            <Text style={styles.label}>Pangkalan</Text>
+            <Text style={styles.colon}>:</Text>
+            <Text style={styles.value}>{data.institution || '-'}</Text>
           </View>
         </View>
-      </Page>
-    </Document>
+
+        <Text style={styles.as}>Sebagai</Text>
+        <Text style={styles.award}>PRAMUKA SIAGA GARUDA</Text>
+
+        <Text style={styles.description}>
+          Yang telah menyelesaikan SPG tersebut diatas, dan berhak untuk mengenakan Tanda Kecakapan Pramuka Garuda. Dengan harapan senantiasa meningkatkan keterampilan dan pengetahuannya berdasarkan Dwi
+          Satya dan Dwi Darma Pramuka.
+        </Text>
+
+        <View style={styles.signature}>
+          <Text style={styles.signatureLine}>{`Ditetapkan di  : ${CERTIFICATE_CONFIG.city}`}</Text>
+          <Text style={styles.signatureLine}>{`Pada tanggal  : ${formatIndonesianDate(data.date)}`}</Text>
+
+          <View style={styles.signatureBlock}>
+            <Text>{CERTIFICATE_CONFIG.kwarcab}</Text>
+            <Text>{CERTIFICATE_CONFIG.position}</Text>
+          </View>
+
+          <Text style={styles.signerName}>{CERTIFICATE_CONFIG.signer_name}</Text>
+          <Text style={styles.signerNta}>{CERTIFICATE_CONFIG.signer_nta}</Text>
+        </View>
+      </View>
+    </Page>
   );
 };
+
+export const CertificateDocument = ({ data, frameSrc, logoSrc }: { data: CertificateData; frameSrc: string; logoSrc: string }) => (
+  <Document title={`Sertifikat Pramuka Siaga Garuda - ${data.name}`} author={CERTIFICATE_CONFIG.kwarcab.replace('\n', ' ')}>
+    <CertificatePage data={data} frameSrc={frameSrc} logoSrc={logoSrc} />
+  </Document>
+);
+
+/** Beberapa sertifikat digabung jadi satu file PDF, satu halaman per anggota. */
+export const CertificateBulkDocument = ({ items, frameSrc, logoSrc }: { items: CertificateData[]; frameSrc: string; logoSrc: string }) => (
+  <Document title={`Sertifikat Pramuka Siaga Garuda (${items.length} data)`} author={CERTIFICATE_CONFIG.kwarcab.replace('\n', ' ')}>
+    {items.map((item, index) => (
+      <CertificatePage key={`${item.nta || item.name}-${index}`} data={item} frameSrc={frameSrc} logoSrc={logoSrc} />
+    ))}
+  </Document>
+);
 
 export default CertificateDocument;
