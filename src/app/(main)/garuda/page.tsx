@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, CardAction } from '@/components/ui/card';
-import { CheckCircle, CircleCheckBig, Clock, FileText, Plus, Search, SquarePen, Trash2, Trophy, X } from 'lucide-react';
+import { CheckCircle, CircleCheckBig, Clock, FileDown, FileText, Plus, Search, SquarePen, Trash2, Trophy, X } from 'lucide-react';
 import { DataTable, ColumnDef } from '@/components/ui/data-table';
 import { CustomPagination } from '@/components/ui/pagination';
 import { Button } from '@/components/ui/button';
@@ -18,6 +18,8 @@ import { UpdateConfirmation } from '@/components/ui/update-confirmation';
 import { useSession } from 'next-auth/react';
 import { SearchableSelect } from '@/components/ui/searchable-select';
 import { getInstitution } from '@/services/instantion';
+import moment from 'moment';
+import { downloadGarudaCertificate } from '@/lib/generate-certificate';
 
 export default function GarudaPage() {
   const { data: session } = useSession();
@@ -32,6 +34,8 @@ export default function GarudaPage() {
 
   const [params, setParams] = useState({ search: '', institution_id: '', page: 1, limit: 10 });
   const [paramsInstitution, setParamsInstitution] = useState({ search: '', page: 1, limit: 10 });
+
+  const [certificateId, setCertificateId] = useState<string | null>(null);
 
   const [editingData, setEditingData] = useState<GarudaData | null>(null);
   const [dataDelete, setDataDelete] = useState<GarudaData | null>(null);
@@ -113,6 +117,29 @@ export default function GarudaPage() {
     setUpdateConfirmModal(true);
   };
 
+  const handleDownloadCertificate = async (item: GarudaData) => {
+    setCertificateId(item._id);
+    try {
+      await toast.promise(
+        downloadGarudaCertificate({
+          name: item.member_id?.name || '',
+          nta: item.member_id?.nta || '',
+          institution: item.institution?.name || '',
+          date: item.approved_at,
+          number: item.certificate_number,
+          year: item.certificate_year,
+        }),
+        {
+          loading: 'Menyiapkan sertifikat...',
+          success: 'Sertifikat berhasil diunduh!',
+          error: (err) => `Gagal membuat sertifikat: ${err.message}`,
+        },
+      );
+    } finally {
+      setCertificateId(null);
+    }
+  };
+
   const handleDelete = (item: GarudaData) => {
     setDataDelete(item);
     setDeleteModal(true);
@@ -149,6 +176,7 @@ export default function GarudaPage() {
     { header: 'Level TKU', accessor: 'level_tku' },
     { header: 'Total TKK', accessor: 'total_tkk' },
     { header: 'Status', accessor: 'status', cell: (item) => getStatusBadge(item.status) },
+    { header: 'Waktu Approve', accessor: 'approved_at', cell: (item) => (item.approved_at ? moment(item.approved_at).format('DD/MM/YYYY HH:mm') : '-') },
     {
       header: 'Actions',
       accessor: 'id',
@@ -161,6 +189,16 @@ export default function GarudaPage() {
                 <CircleCheckBig className="h-4 w-4" />
               </Button>
             )}
+
+            <Button
+              disabled={item.status !== 1 || certificateId === item._id}
+              onClick={() => handleDownloadCertificate(item)}
+              size="icon"
+              title="Unduh sertifikat"
+              className="size-8 bg-green-50 hover:bg-green-100 text-green-600"
+            >
+              <FileDown className="h-4 w-4" />
+            </Button>
 
             {!isAdminKecamatan && (
               <Button disabled={item.status !== 0} onClick={() => handleDelete(item)} size="icon" className="size-8 bg-red-50 hover:bg-red-100 text-red-600">
