@@ -11,7 +11,7 @@ export const CERTIFICATE_CONFIG = {
   kwarcab: 'Kwartir Cabang Gerakan Pramuka\nTrenggalek',
   position: 'Ketua Harian,',
   signer_name: 'MAHSUN ISMA’IL, S.Ag, MM',
-  signer_nta: 'NTA. 310519660003',
+  signer_nta: 'NTA. 13.03.00.310566.0001',
   number_suffix: 'SPG/1303-A',
 };
 
@@ -91,7 +91,6 @@ const styles = StyleSheet.create({
   },
   value: {
     fontFamily: 'Helvetica-Bold',
-    color: '#C00000',
   },
   as: {
     marginTop: 16,
@@ -170,8 +169,7 @@ const CertificatePage = ({ data, frameSrc, logoSrc }: { data: CertificateData; f
         <Text style={styles.award}>PRAMUKA SIAGA GARUDA</Text>
 
         <Text style={styles.description}>
-          Yang telah menyelesaikan SPG tersebut diatas, dan berhak untuk mengenakan Tanda Kecakapan Pramuka Garuda. Dengan harapan senantiasa meningkatkan keterampilan dan pengetahuannya berdasarkan Dwi
-          Satya dan Dwi Darma Pramuka.
+          Yang telah menyelesaikan SPG tersebut di atas, dan berhak untuk mengenakan Tanda Kecakapan Pramuka Garuda. Dengan harapan senantiasa meningkatkan keterampilan dan pengetahuannya berdasarkan Dwi Satya dan Dwi Darma Pramuka.
         </Text>
 
         <View style={styles.signature}>
