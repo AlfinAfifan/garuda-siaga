@@ -2,11 +2,11 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, CardAction } from '@/components/ui/card';
-import { CheckCircle, CircleCheckBig, Clock, FileDown, FileText, Plus, Printer, Search, SquarePen, Trash2, Trophy, X } from 'lucide-react';
+import { CheckCircle, CircleCheckBig, Clock, FileDown, FileText, Plus, Printer, ScrollText, Search, SquarePen, Trash2, Trophy, X } from 'lucide-react';
 import { DataTable, ColumnDef } from '@/components/ui/data-table';
 import { CustomPagination } from '@/components/ui/pagination';
 import { Button } from '@/components/ui/button';
-import { GarudaData } from './types';
+import { GarudaData, GarudaMember } from './types';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { Input } from '@/components/ui/input';
@@ -21,13 +21,45 @@ import { getInstitution } from '@/services/instantion';
 import moment from 'moment';
 import { downloadGarudaCertificate, downloadGarudaCertificates, MAX_BULK_CERTIFICATE } from '@/lib/generate-certificate';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Popover, PopoverContent, PopoverClose, PopoverTrigger } from '@/components/ui/popover';
 import type { CertificateData } from '@/components/garuda/CertificateDocument';
+import { downloadGarudaDecree, downloadGarudaDecrees } from '@/lib/generate-decree';
+import type { DecreeData } from '@/components/garuda/DecreeDocument';
 
 /** Ubah satu baris garuda jadi data yang dibutuhkan template sertifikat */
 const toCertificateData = (item: GarudaData): CertificateData => ({
   name: item.member_id?.name || '',
   nta: item.member_id?.nta || '',
   institution: item.institution?.name || '',
+  date: item.approved_at,
+  number: item.certificate_number,
+  year: item.certificate_year,
+});
+
+/** Gabungkan alamat anggota jadi satu kalimat seperti pada contoh surat ketetapan */
+const formatMemberAddress = (member?: GarudaMember | null) => {
+  if (!member) return '';
+
+  const detail = [member.rt ? `RT ${member.rt}` : '', member.rw ? `RW ${member.rw}` : '', member.village ? `Desa ${member.village}` : ''].filter(Boolean).join(' ');
+  const region = [member.sub_district ? `Kec. ${member.sub_district}` : '', member.district ? `Kab. ${member.district}` : ''].filter(Boolean).join(' ');
+
+  return [detail, region].filter(Boolean).join(', ');
+};
+
+/** Nomor gugus depan dipisah putra/putri mengikuti jenis kelamin anggota */
+const getGudepNumber = (item: GarudaData) => (item.member_id?.gender === 'Perempuan' ? item.institution?.gudep_woman : item.institution?.gudep_man) || '';
+
+/** Ubah satu baris garuda jadi data yang dibutuhkan template surat ketetapan */
+const toDecreeData = (item: GarudaData): DecreeData => ({
+  name: item.member_id?.name || '',
+  birth_place: item.member_id?.birth_place,
+  birth_date: item.member_id?.birth_date,
+  religion: item.member_id?.religion,
+  gender: item.member_id?.gender,
+  address: formatMemberAddress(item.member_id),
+  institution: item.institution?.name || '',
+  gudep_number: getGudepNumber(item),
+  gudep_address: item.institution?.address,
   date: item.approved_at,
   number: item.certificate_number,
   year: item.certificate_year,
@@ -48,9 +80,11 @@ export default function GarudaPage() {
   const [paramsInstitution, setParamsInstitution] = useState({ search: '', page: 1, limit: 10 });
 
   const [certificateId, setCertificateId] = useState<string | null>(null);
+  const [decreeId, setDecreeId] = useState<string | null>(null);
   // Sertifikat yang dicentang untuk cetak massal, disimpan utuh supaya pilihan bertahan lintas halaman
   const [selectedCertificates, setSelectedCertificates] = useState<GarudaData[]>([]);
   const [isBulkPrinting, setIsBulkPrinting] = useState(false);
+  const [isBulkPrintingDecree, setIsBulkPrintingDecree] = useState(false);
 
   const [editingData, setEditingData] = useState<GarudaData | null>(null);
   const [dataDelete, setDataDelete] = useState<GarudaData | null>(null);
@@ -192,6 +226,24 @@ export default function GarudaPage() {
     }
   };
 
+  const handleBulkPrintDecree = async () => {
+    if (!selectedCertificates.length) return;
+
+    setIsBulkPrintingDecree(true);
+    try {
+      await toast.promise(downloadGarudaDecrees(selectedCertificates.map(toDecreeData)), {
+        loading: `Menyiapkan ${selectedCertificates.length} surat ketetapan...`,
+        success: 'Surat ketetapan berhasil diunduh!',
+        error: (err) => `Gagal membuat surat ketetapan: ${err.message}`,
+      });
+      setSelectedCertificates([]);
+    } catch {
+      // pesan error sudah ditampilkan lewat toast
+    } finally {
+      setIsBulkPrintingDecree(false);
+    }
+  };
+
   const handleDownloadCertificate = async (item: GarudaData) => {
     setCertificateId(item._id);
     try {
@@ -202,6 +254,19 @@ export default function GarudaPage() {
       });
     } finally {
       setCertificateId(null);
+    }
+  };
+
+  const handleDownloadDecree = async (item: GarudaData) => {
+    setDecreeId(item._id);
+    try {
+      await toast.promise(downloadGarudaDecree(toDecreeData(item)), {
+        loading: 'Menyiapkan surat ketetapan...',
+        success: 'Surat ketetapan berhasil diunduh!',
+        error: (err) => `Gagal membuat surat ketetapan: ${err.message}`,
+      });
+    } finally {
+      setDecreeId(null);
     }
   };
 
@@ -277,15 +342,33 @@ export default function GarudaPage() {
               </Button>
             )}
 
-            <Button
-              disabled={item.status !== 1 || certificateId === item._id}
-              onClick={() => handleDownloadCertificate(item)}
-              size="icon"
-              title="Unduh sertifikat"
-              className="size-8 bg-green-50 hover:bg-green-100 text-green-600"
-            >
-              <FileDown className="h-4 w-4" />
-            </Button>
+            {/* Satu tombol cetak, jenis dokumen dipilih lewat popover */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  disabled={item.status !== 1 || certificateId === item._id || decreeId === item._id}
+                  size="icon"
+                  title={item.status === 1 ? 'Cetak dokumen' : 'Hanya data approved yang bisa dicetak'}
+                  className="size-8 bg-green-50 hover:bg-green-100 text-green-600"
+                >
+                  <Printer className="h-4 w-4" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent align="end" className="w-56 p-1">
+                <PopoverClose asChild>
+                  <Button variant="ghost" size="sm" className="w-full justify-start font-normal" onClick={() => handleDownloadCertificate(item)}>
+                    <FileDown className="h-4 w-4 text-green-600" />
+                    Cetak Sertifikat
+                  </Button>
+                </PopoverClose>
+                <PopoverClose asChild>
+                  <Button variant="ghost" size="sm" className="w-full justify-start font-normal" onClick={() => handleDownloadDecree(item)}>
+                    <ScrollText className="h-4 w-4 text-amber-600" />
+                    Cetak Surat Ketetapan
+                  </Button>
+                </PopoverClose>
+              </PopoverContent>
+            </Popover>
 
             {!isAdminKecamatan && (
               <Button disabled={item.status !== 0} onClick={() => handleDelete(item)} size="icon" className="size-8 bg-red-50 hover:bg-red-100 text-red-600">
@@ -380,15 +463,19 @@ export default function GarudaPage() {
           {selectedCertificates.length > 0 && (
             <div className="mb-4 flex flex-col gap-3 rounded-md border border-primary-200 bg-primary-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
               <p className="text-sm text-primary-800">
-                <span className="font-semibold">{selectedCertificates.length}</span> dari maksimal {MAX_BULK_CERTIFICATE} sertifikat dipilih
+                <span className="font-semibold">{selectedCertificates.length}</span> dari maksimal {MAX_BULK_CERTIFICATE} data dipilih
               </p>
               <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" onClick={() => setSelectedCertificates([])} disabled={isBulkPrinting}>
+                <Button variant="outline" size="sm" onClick={() => setSelectedCertificates([])} disabled={isBulkPrinting || isBulkPrintingDecree}>
                   Batal Pilih
                 </Button>
-                <Button size="sm" className="bg-primary-600 hover:bg-primary-700" onClick={handleBulkPrintCertificate} disabled={isBulkPrinting}>
+                <Button size="sm" className="bg-primary-600 hover:bg-primary-700" onClick={handleBulkPrintCertificate} disabled={isBulkPrinting || isBulkPrintingDecree}>
                   <Printer className="mr-2 h-4 w-4" />
                   {isBulkPrinting ? 'Menyiapkan...' : 'Cetak Sertifikat'}
+                </Button>
+                <Button size="sm" className="bg-amber-600 hover:bg-amber-700" onClick={handleBulkPrintDecree} disabled={isBulkPrinting || isBulkPrintingDecree}>
+                  <ScrollText className="mr-2 h-4 w-4" />
+                  {isBulkPrintingDecree ? 'Menyiapkan...' : 'Cetak Ketetapan'}
                 </Button>
               </div>
             </div>
