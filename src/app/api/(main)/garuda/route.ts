@@ -7,7 +7,7 @@ import { getToken } from 'next-auth/jwt';
 import Tkk from '@/lib/modals/tkk';
 import Tku from '@/lib/modals/tku';
 import TypeTkk from '@/lib/modals/type_tkk';
-import { Types } from 'mongoose';
+import { garudaFilterStages, garudaProjectStage } from '@/lib/garuda-pipeline';
 
 export async function GET(req: NextRequest) {
   await connect();
@@ -19,125 +19,12 @@ export async function GET(req: NextRequest) {
 
   const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
 
-  // Pipeline untuk aggregate agar bisa search by nama member
-  const initialMatchStage: any = { is_delete: 0 };
-
   const pipeline: any[] = [
-    { $match: initialMatchStage },
-    {
-      $lookup: {
-        from: 'members',
-        localField: 'member_id',
-        foreignField: '_id',
-        as: 'member',
-      },
-    },
-    { $unwind: '$member' },
-
-    // Filter member yang tidak terhapus
-    { $match: { 'member.is_delete': 0 } },
-
-    // Ambil data lembaga dari member (ditampilkan di tabel & dipakai untuk filter)
-    {
-      $lookup: {
-        from: 'institutions',
-        localField: 'member.institution_id',
-        foreignField: '_id',
-        as: 'institution',
-      },
-    },
-    { $unwind: { path: '$institution', preserveNullAndEmptyArrays: true } },
-
-    ...(token && token.role === 'user' && token.institution_id
-      ? [
-          {
-            $match: {
-              'member.institution_id': new Types.ObjectId(token.institution_id),
-            },
-          },
-        ]
-      : []),
-
-    ...(token && token.role === 'admin_kecamatan' && token.sub_district
-      ? [
-          {
-            $match: {
-              'institution.sub_district': token.sub_district,
-              'institution.is_delete': 0,
-            },
-          },
-        ]
-      : []),
-
-    ...(institution_id && Types.ObjectId.isValid(institution_id)
-      ? [
-          {
-            $match: {
-              'member.institution_id': new Types.ObjectId(institution_id),
-            },
-          },
-        ]
-      : []),
-
-    ...(search
-      ? [
-          {
-            $match: {
-              $or: [{ 'member.name': { $regex: search, $options: 'i' } }, { 'member.phone': { $regex: search, $options: 'i' } }],
-            },
-          },
-        ]
-      : []),
-
-    {
-      $sort: { createdAt: -1 },
-    },
+    ...garudaFilterStages(token, search, institution_id),
+    { $sort: { createdAt: -1 } },
     {
       $facet: {
-        data: [
-          { $skip: (page - 1) * limit },
-          { $limit: limit },
-          {
-            $project: {
-              _id: 1,
-              member_id: {
-                _id: '$member._id',
-                name: '$member.name',
-                nta: '$member.member_number',
-                // Data tambahan yang dicetak pada surat ketetapan
-                gender: '$member.gender',
-                birth_place: '$member.birth_place',
-                birth_date: '$member.birth_date',
-                religion: '$member.religion',
-                rt: '$member.rt',
-                rw: '$member.rw',
-                village: '$member.village',
-                sub_district: '$member.sub_district',
-                district: '$member.district',
-                province: '$member.province',
-              },
-              institution: {
-                _id: '$institution._id',
-                name: '$institution.name',
-                // Alamat & nomor gugus depan dipakai pada surat ketetapan
-                address: '$institution.address',
-                gudep_man: '$institution.gudep_man',
-                gudep_woman: '$institution.gudep_woman',
-                head_gudep_man: '$institution.head_gudep_man',
-                head_gudep_woman: '$institution.head_gudep_woman',
-              },
-              level_tku: 1,
-              total_tkk: 1,
-              status: 1,
-              approved_by: 1,
-              approved_at: 1,
-              certificate_number: 1,
-              certificate_year: 1,
-              createdAt: 1,
-              updatedAt: 1,
-            },
-          },
-        ],
+        data: [{ $skip: (page - 1) * limit }, { $limit: limit }, garudaProjectStage],
         totalCount: [{ $count: 'count' }],
       },
     },

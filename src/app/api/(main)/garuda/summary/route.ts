@@ -2,7 +2,7 @@ import connect from '@/lib/db';
 import { NextRequest, NextResponse } from 'next/server';
 import Garuda from '@/lib/modals/garuda';
 import { getToken } from 'next-auth/jwt';
-import { Types } from 'mongoose';
+import { garudaFilterStages } from '@/lib/garuda-pipeline';
 
 export const GET = async (req: NextRequest) => {
   try {
@@ -14,32 +14,7 @@ export const GET = async (req: NextRequest) => {
       return new NextResponse('Unauthorized', { status: 401 });
     }
 
-    // Build aggregation pipeline untuk konsistensi dengan list API
-    const baseMatch = { is_delete: 0 };
-
-    const pipeline: any[] = [
-      { $match: baseMatch },
-      {
-        $lookup: {
-          from: 'members',
-          localField: 'member_id',
-          foreignField: '_id',
-          as: 'member',
-        },
-      },
-      { $unwind: '$member' },
-      // Filter member yang tidak terhapus
-      { $match: { 'member.is_delete': 0 } },
-    ];
-
-    // If not admin or super_admin, filter by user's institution
-    if (token.role !== 'admin' && token.role !== 'super_admin' && token.role !== 'admin_kecamatan') {
-      pipeline.push({
-        $match: {
-          'member.institution_id': new Types.ObjectId(token.institution_id),
-        },
-      });
-    }
+    const pipeline = garudaFilterStages(token, '', '');
 
     // Get total garuda
     const totalGarudaPipeline = [...pipeline, { $count: 'total' }];

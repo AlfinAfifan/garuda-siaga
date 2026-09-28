@@ -18,6 +18,8 @@ export type GarudaMember = {
 export type GarudaInstitution = {
   _id: string;
   name: string;
+  /** Kwaran, dipakai di export Excel */
+  sub_district?: string | null;
   /** Alamat & nomor gugus depan, dicetak pada surat ketetapan */
   address?: string | null;
   gudep_man?: string | null;

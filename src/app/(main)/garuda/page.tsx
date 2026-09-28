@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, CardAction } from '@/components/ui/card';
-import { CheckCircle, CircleCheckBig, Clock, FileDown, FileText, Plus, Printer, ScrollText, Search, SquarePen, Trash2, Trophy, X } from 'lucide-react';
+import { CheckCircle, CircleCheckBig, Clock, FileDown, FileText, FolderDown, Plus, Printer, ScrollText, Search, SquarePen, Trash2, Trophy, X } from 'lucide-react';
 import { DataTable, ColumnDef } from '@/components/ui/data-table';
 import { CustomPagination } from '@/components/ui/pagination';
 import { Button } from '@/components/ui/button';
@@ -12,7 +12,8 @@ import toast from 'react-hot-toast';
 import { Input } from '@/components/ui/input';
 import { DeleteConfirmation } from '@/components/ui/delete-confirmation';
 import { useNavbarAction } from '../layout';
-import { approveGaruda, createGaruda, deleteGaruda, GarudaPayload, getGaruda, getSummaryGaruda } from '@/services/garuda';
+import { approveGaruda, createGaruda, deleteGaruda, exportGaruda, GarudaPayload, getGaruda, getSummaryGaruda } from '@/services/garuda';
+import { utils, writeFile } from 'xlsx';
 import { InputModal } from '@/components/garuda/InputModal';
 import { UpdateConfirmation } from '@/components/ui/update-confirmation';
 import { useSession } from 'next-auth/react';
@@ -85,6 +86,7 @@ export default function GarudaPage() {
   const [selectedCertificates, setSelectedCertificates] = useState<GarudaData[]>([]);
   const [isBulkPrinting, setIsBulkPrinting] = useState(false);
   const [isBulkPrintingDecree, setIsBulkPrintingDecree] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
   const [editingData, setEditingData] = useState<GarudaData | null>(null);
   const [dataDelete, setDataDelete] = useState<GarudaData | null>(null);
@@ -267,6 +269,33 @@ export default function GarudaPage() {
       });
     } finally {
       setDecreeId(null);
+    }
+  };
+
+  const handleExport = async () => {
+    setIsExporting(true);
+    try {
+      const { data: rows } = await exportGaruda({ search: params.search, institution_id: params.institution_id });
+      const sheetData = (rows as GarudaData[]).map((item) => ({
+        Anggota: item.member_id?.name || '-',
+        NTA: item.member_id?.nta || '-',
+        Lembaga: item.institution?.name || '-',
+        Kwaran: item.institution?.sub_district || '-',
+        'Level TKU': item.level_tku || '-',
+        'Total TKK': item.total_tkk || 0,
+        Status: ['Pending', 'Approved'][item.status] ?? 'Rejected',
+        'Waktu Approve': item.approved_at ? moment(item.approved_at).format('DD/MM/YYYY HH:mm') : '-',
+      }));
+
+      const worksheet = utils.json_to_sheet(sheetData);
+      worksheet['!cols'] = [{ wch: 30 }, { wch: 20 }, { wch: 35 }, { wch: 20 }, { wch: 12 }, { wch: 10 }, { wch: 12 }, { wch: 18 }];
+      const workbook = utils.book_new();
+      utils.book_append_sheet(workbook, worksheet, 'RekapGaruda');
+      writeFile(workbook, 'RekapGaruda.xlsx', { compression: true });
+    } catch {
+      toast.error('Gagal mengunduh data. Silakan coba lagi.');
+    } finally {
+      setIsExporting(false);
     }
   };
 
@@ -456,6 +485,10 @@ export default function GarudaPage() {
                   </button>
                 )}
               </div>
+              <Button className="bg-green-600 hover:bg-green-700" onClick={handleExport} disabled={isExporting || !data?.pagination?.total}>
+                <FolderDown className="w-4 h-4" />
+                {isExporting ? 'Menyiapkan...' : 'Excel'}
+              </Button>
             </div>
           </CardAction>
         </CardHeader>
